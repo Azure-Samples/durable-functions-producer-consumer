@@ -28,6 +28,10 @@
     "CosmosDbDatabaseName": null,
     "CosmosDbCollectionName": null,
 
+    "GcpProjectId": "...",
+    "GcpTopicId": "...",
+    "GOOGLE_APPLICATION_CREDENTIALS": "GcpPubSub/authfile/gcpPubSubCreds.json",
+
     "FUNCTIONS_WORKER_RUNTIME": "dotnet",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "DFTaskHubName": "producerlocalTaskHub"
