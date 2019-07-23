@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Consumer": {
+      "commandName": "Project",
+      "commandLineArgs": "start -p 7073"
+    }
+  }
+}

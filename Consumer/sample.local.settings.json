@@ -1,0 +1,15 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "ServiceBusConnection": "Endpoint=sb://...no-entity-path",
+    "ServiceBusQueueName": "sample",
+    "EventHubConnection": "Endpoint=sb://...no-entity-path",
+    "EventHubName": "sample",
+    "StorageQueueConnection": "DefaultEndpointsProtocol=https;AccountName=...",
+    "StorageQueueName": "sample",
+    "CollectorEventHubConnection": "Endpoint=sb://...no-entity-path",
+    "CollectorEventHubName": "collector",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "AzureWebJobsStorage": "UseDevelopmentStorage=true"
+  }
+}
