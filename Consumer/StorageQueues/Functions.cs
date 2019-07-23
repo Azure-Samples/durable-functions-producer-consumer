@@ -31,12 +31,12 @@ namespace Consumer.StorageQueues
                 await Task.Delay(workTime.Value<int>());
             }
 
-            var collectorItem = new CollectorMessage
+            var collectorItem = new AzureCollectorMessage
             {
                 MessageProcessedTime = DateTime.UtcNow,
                 TestRun = jsonContent.Value<string>(@"TestRunId"),
                 Trigger = @"Queue",
-                Properties = new Dictionary<string, object>
+                Properties = JObject.FromObject(new Dictionary<string, object>
                 {
                     { @"InstanceId", _instanceId },
                     { @"ExecutionId", Guid.NewGuid().ToString() },
@@ -46,7 +46,7 @@ namespace Consumer.StorageQueues
                     { @"MessageId", jsonContent.Value<int>(@"MessageId") },
                     { @"DequeuedTime", timestamp },
                     { @"Language", @"csharp" },
-                }
+                })
             };
 
             await collector.AddAsync(collectorItem.ToString());

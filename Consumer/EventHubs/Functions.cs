@@ -32,12 +32,12 @@ namespace Consumer.EventHubs
                     await Task.Delay((int)value);
                 }
 
-                var collectorItem = new CollectorMessage
+                var collectorItem = new AzureCollectorMessage
                 {
                     MessageProcessedTime = DateTime.UtcNow,
                     TestRun = ehMessage.Properties[@"TestRunId"].ToString(),
                     Trigger = @"EventHub",
-                    Properties = new Dictionary<string, object>
+                    Properties = JObject.FromObject(new Dictionary<string, object>
                     {
                         { @"InstanceId", _instanceId },
                         { @"ExecutionId", Guid.NewGuid().ToString() },
@@ -46,7 +46,7 @@ namespace Consumer.EventHubs
                         { @"MessageId", ehMessage.Properties[@"MessageId"] },
                         { @"DequeuedTime", timestamp },
                         { @"Language", @"csharp" },
-                    }
+                    })
                 };
 
                 await collector.AddAsync(collectorItem.ToString());
