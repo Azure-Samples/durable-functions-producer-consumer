@@ -92,6 +92,8 @@ Then, head to your Data Explorer (the window you ran queries within during deplo
 SampleDataTable
 ```
 
+> Note: It can take up to 5 minutes for data to be ingested & show up in Azure Data Explorer
+
 to retrieve all of the rows in the ingestion table. You should then see something like this:
 ![](doc-img/all-sampledata.png)
 
@@ -99,7 +101,7 @@ You can use the content of `Properties` to get more detailed data. Try this quer
 ```
 SampleDataTable
 | extend Duration = make_timespan(MessageProcessedTime - Properties.ClientEnqueueTimeUtc)
-| summarize AvgIndividualProcessTime = avg(Duration), RunStartTime = min(make_datetime(Properties.ClientEnqueueTimeUtc)), RunEndTime = max(MessageProcessedTime) by TestRun
+| summarize AvgIndividualProcessTime = avg(Duration), RunStartTime = min(make_datetime(Properties.ClientEnqueueTimeUtc)), RunEndTime = max(MessageProcessedTime) by TestRun, Trigger
 | extend TotalRuntime = (RunEndTime - RunStartTime)
 | project-away RunStartTime, RunEndTime
 ```
@@ -109,7 +111,7 @@ This will show you the average processing time for an individual message in the 
 SampleDataTable
 | where TestRun = 'b5f4b4ef-75db-4586-adc0-b66da97a6545'
 | extend Duration = make_timespan(MessageProcessedTime - Properties.ClientEnqueueTimeUtc)
-| summarize AvgIndividualProcessTime = avg(Duration), RunStartTime = min(make_datetime(Properties.ClientEnqueueTimeUtc)), RunEndTime = max(MessageProcessedTime) by TestRun
+| summarize AvgIndividualProcessTime = avg(Duration), RunStartTime = min(make_datetime(Properties.ClientEnqueueTimeUtc)), RunEndTime = max(MessageProcessedTime) by TestRun, Trigger
 | extend TotalRuntime = (RunEndTime - RunStartTime)
 | project-away RunStartTime, RunEndTime
 ```
