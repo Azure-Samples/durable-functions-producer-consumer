@@ -28,6 +28,16 @@
     "CosmosDbDatabaseName": null,
     "CosmosDbCollectionName": null,
 
+    "AWS_ACCESS_KEY_ID": "...",
+    "AWS_SECRET_ACCESS_KEY": "...",
+    "SqsServiceUrl": "https://sqs.<region>.amazonaws.com",
+    "SqsQueueName": "...",
+    "AwsAccountId": "...",
+
+    "GcpProjectId": "...",
+    "GcpTopicId": "...",
+    "GOOGLE_APPLICATION_CREDENTIALS": "GcpPubSub/authfile/gcpPubSubCreds.json",
+
     "FUNCTIONS_WORKER_RUNTIME": "dotnet",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "DFTaskHubName": "producerlocalTaskHub"
