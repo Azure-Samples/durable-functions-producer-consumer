@@ -5,11 +5,15 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Remove="GcpPubSub\**" />
-    <EmbeddedResource Remove="GcpPubSub\**" />
     <None Remove="GcpPubSub\**" />
   </ItemGroup>
   <ItemGroup>
     <None Remove="messagecontent.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="GcpPubSub\authfile\gcpPubSubCreds.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="messagecontent.txt" />
