@@ -59,6 +59,10 @@ $queriesUrl = "$($dexbaseUrl)?query=H4sIAAAAAAAAA4VRwWrDMAy9F/oPwgyyQUjvuW7XQtly
 $eventHubProducerUrl = $initialDeployResult.Outputs.Item("eventHubProducer").Value
 $serviceBusProducer = $initialDeployResult.Outputs.Item("serviceBusProducer").Value
 $storageQueueProducer = $initialDeployResult.Outputs.Item("storageQueueProducer").Value
+$storageAccount = $initialDeployResult.Outputs.Item("storageAccountName").Value
+
+# Storage queues aren't able to be created by ARM templates (yet) - create via AzPosh
+Get-AzStorageAccount -Name $storageAccount -ResourceGroupName $resourceGroupName | New-AzStorageQueue -Name sample >$null
 
 Start-Process $queriesUrl
 
