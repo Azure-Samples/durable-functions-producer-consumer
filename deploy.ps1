@@ -56,6 +56,9 @@ $initialDeployResult = New-AzResourceGroupDeployment -ResourceGroupName $resourc
 $dexbaseUrl = $initialDeployResult.Outputs.Item("dexbaseUrl").Value
 $queriesUrl = "$($dexbaseUrl)?query=H4sIAAAAAAAAA4VRwWrDMAy9F/oPwgyyQUjvuW7XQtlyGztoifA8YsfYyqCU/nvVum2csq0XIz3pPUtPVRsImYDxsyd4Q+t7ekHG5pQ/rilG1LQJQysRdY2xVEMnDJaohOd+GDup/piOQg2Rg3G6hIYiv44uA4LROu8QjqfAhqLIbR1a0z7BagXXcYImTlMtF8tF9e+YoigfmsHBd5THovcCQXHsWKekgOJ9B6od+tE6VavfFlOl8shfUn2o/qjL5shbT9JzMUHty92kOzMkF7wtZErJk7nO2cFcYYLucZPZM+4VusOd7pLTZ2juQbqc2n8U2fGODZcjHADkwjrlYAIAAA=="
 
+$dexResourceHost = $initialDeployResult.Outputs.Item("dexResourceHost").Value
+$dexResourceUrl = "https://$dexResourceHost"
+
 $eventHubProducerUrl = $initialDeployResult.Outputs.Item("eventHubProducer").Value
 $serviceBusProducer = $initialDeployResult.Outputs.Item("serviceBusProducer").Value
 $storageQueueProducer = $initialDeployResult.Outputs.Item("storageQueueProducer").Value
@@ -64,11 +67,28 @@ $storageAccount = $initialDeployResult.Outputs.Item("storageAccountName").Value
 # Storage queues aren't able to be created by ARM templates (yet) - create via AzPosh
 Get-AzStorageAccount -Name $storageAccount -ResourceGroupName $resourceGroupName | New-AzStorageQueue -Name sample >$null
 
-Start-Process $queriesUrl
+# Get auth token to execute Kusto queries against the Data Explorer instance to create table & data mapping
+import-module az
+$context = [Microsoft.Azure.Commands.Common.Authentication.Abstractions.AzureRmProfileProvider]::Instance.Profile.DefaultContext
+$token = [Microsoft.Azure.Commands.Common.Authentication.AzureSession]::Instance.AuthenticationFactory.Authenticate($context.Account, $context.Environment, $context.Tenant.Id.ToString(), $null, [Microsoft.Azure.Commands.Common.Authentication.ShowDialog]::Never, $null, $dexResourceUrl).AccessToken
 
-Write-Host "A web page has been opened for you. Please run the queries in order by selecting each and clicking the 'Run' button. This will set up the new Azure Data Explorer instance for ingestion.`nWhen finished, please press the <Enter> key..." -ForegroundColor Yellow
+# Call Kusto endpoint to run queries
+$createTableRequestBody = @{
+	csl = ".create table SampleDataTable (MessageProcessedTime: datetime, CloudProvider: string, TestRun: string, Trigger: string, Properties: dynamic)"
+	db = "sampledata"
+}
+$createDataMappingRequestBody = @{
+	csl ='.create table SampleDataTable ingestion json mapping ''DataMapping'' ''[{ "column":"MessageProcessedTime","path":"$.MessageProcessedTime","datatype":"datetime"},{"column":"CloudProvider","path":"$.CloudProvider","datatype":"string"},{"column":"TestRun","path":"$.TestRun","datatype":"string"},{"column":"Trigger","path":"$.Trigger","datatype":"string"},{"column":"Properties","path":"$.Properties","datatype":"dynamic"}]'''
+	db = "sampledata"
+}
+$headers = @{
+	Accept = "application/json"
+	Authorization = "Bearer $token"
+	Host = $dexResourceHost
+}
 
-$null = $Host.UI.RawUI.ReadKey('NoEcho,IncludeKeyDown');
+Invoke-RestMethod -Method Post -Uri "$dexResourceUrl/v1/rest/mgmt" -Body (ConvertTo-Json $createTableRequestBody) -ContentType "application/json" -Headers $headers 
+Invoke-RestMethod -Method Post -Uri "$dexResourceUrl/v1/rest/mgmt" -Body (ConvertTo-Json $createDataMappingRequestBody) -ContentType "application/json" -Headers $headers 
 
 Write-Host "Setting up data ingestion from Event Hub -> Data Explorer..."
 New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile "azuredeploy.dexdataconnection.json" >$null

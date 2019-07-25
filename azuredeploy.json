@@ -455,6 +455,10 @@
       "type": "string",
       "value": "[concat('https://dataexplorer.azure.com/clusters/', parameters('DataExplorerClusterName'), '.', resourceGroup().location, '/databases/sampledata')]"
     },
+    "dexResourceHost": {
+      "type": "string",
+      "value": "[concat(parameters('DataExplorerClusterName'), '.', resourceGroup().location, '.kusto.windows.net')]"
+    },
     "eventHubProducer": {
       "type": "string",
       "value": "[concat('https://', parameters('ProducerFunctionAppName'), '.azurewebsites.net/api/PostToEventHub?code=', listkeys(concat(variables('producerFunctionId'), '/host/default/'),'2016-08-01').functionKeys.default)]"
