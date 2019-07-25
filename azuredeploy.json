@@ -339,7 +339,7 @@
           "properties": {
             "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer",
             "branch": "master",
-            "IsManualIntegration": false,
+            "isManualIntegration": true,
             "isMercurial": false
           }
         }
@@ -443,7 +443,7 @@
           "properties": {
             "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer",
             "branch": "master",
-            "IsManualIntegration": false,
+            "isManualIntegration": true,
             "isMercurial": false
           }
         }
