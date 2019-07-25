@@ -1,15 +1,17 @@
 ---
 page_type: sample
-topic: sample
 languages:
   - csharp
 products:
+  - azure
+  - dotnet
   - azure-functions
   - azure-event-hubs
   - azure-service-bus
   - azure-storage
-name: "Produce & Consume messages through Service Bus, Event Hubs, and Storage Queues with Azure Functions"
-description: "Uses Durable Functions' fan out pattern to load N messages across M sessions in to Service Bus, Event Hubs, or Storage Queues. Includes the ability to consume the messages with another Azure Function & load timing data in to Event Hubs for ingestion in to analytics services like Azure Data Explorer."
+name: "Produce and Consume messages through Service Bus, Event Hubs, and Storage Queues with Azure Functions"
+description: "Uses Durable Functions' fan out pattern to load N messages across M sessions in to Service Bus, Event Hubs, or Storage Queues."
+urlFragment: product-consume-messages-az-functions
 ---
 
 # Produce & Consume messages through Service Bus, Event Hubs, and Storage Queues with Durable Functions
@@ -81,7 +83,7 @@ You can deploy the solution in this repo directly to Azure by simply executing `
   * Application settings set to the connection strings of the Service Bus, Event Hub, and Azure Storage
 
 Upon successful deployment you'll be given the HTTP POST URLs for each of the Producer endpoints. Using the sample payloads earlier in this Readme, you'll get a response like:
-```
+```json
 {
     "TestRunId": "b5f4b4ef-75db-4586-adc0-b66da97a6545"
 }
@@ -98,7 +100,7 @@ to retrieve all of the rows in the ingestion table. You should then see somethin
 ![](doc-img/all-sampledata.png)
 
 You can use the content of `Properties` to get more detailed data. Try this query:
-```
+```kusto
 SampleDataTable
 | extend Duration = make_timespan(MessageProcessedTime - Properties.ClientEnqueueTimeUtc)
 | summarize AvgIndividualProcessTime = avg(Duration), RunStartTime = min(make_datetime(Properties.ClientEnqueueTimeUtc)), RunEndTime = max(MessageProcessedTime) by TestRun, Trigger
@@ -107,7 +109,7 @@ SampleDataTable
 ```
 
 This will show you the average processing time for an individual message in the test run, and then the overall time for the entire test run to complete. You can limit to a specific test run by adding a `where` filter:
-```
+```kusto
 SampleDataTable
 | where TestRun = 'b5f4b4ef-75db-4586-adc0-b66da97a6545'
 | extend Duration = make_timespan(MessageProcessedTime - Properties.ClientEnqueueTimeUtc)
