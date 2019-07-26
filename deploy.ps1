@@ -13,8 +13,10 @@ param(
     # The resource group in to which to deploy all the resources
     [Parameter(Mandatory = $True)]
     [string]$resourceGroupName,
-    # Optional, Azure region to which to deploy all resources. Defaults to West US 2
-    [string]$region = "centralus"
+    # Optional, Azure region to which to deploy all resources. Defaults to Central US.
+    [string]$region = "centralus",
+    # Optional, name for the deployment. If not specified, deployment name will be "azuredeploy-yyyyMMdd-hhmmss" (for example, azuredeploy-20190724-083224).
+    [string]$deploymentName
 )
 
 $currentSubscription = Get-AzSubscription -SubscriptionId $subscriptionId -ErrorAction SilentlyContinue
@@ -28,6 +30,12 @@ $ErrorActionPreference = "Stop"
 # select subscription
 Write-Host "Getting subscription..."
 Select-AzSubscription -Subscription $subscriptionId >$null
+
+if (!$deploymentName) {
+    $deploymentName = "azuredeploy-"
+    $currentDateTime = (Get-Date).ToString("yyyyMMdd-hhmmss")
+    $deploymentName += $currentDateTime
+}
 
 # Register required RPs
 Write-Host "Registering resource providers..."
@@ -51,7 +59,7 @@ else {
 
 # Start the deployment
 Write-Host "Deploying Azure resources...`nThis step usually takes 10-15 minutes to complete, standby!"
-$initialDeployResult = New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile "azuredeploy.json"
+$initialDeployResult = New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile "azuredeploy.json" -Name $deploymentName
 
 $dexbaseUrl = $initialDeployResult.Outputs.Item("dexbaseUrl").Value
 $queriesUrl = "$($dexbaseUrl)?query=H4sIAAAAAAAAA4VRwWrDMAy9F/oPwgyyQUjvuW7XQtlyGztoifA8YsfYyqCU/nvVum2csq0XIz3pPUtPVRsImYDxsyd4Q+t7ekHG5pQ/rilG1LQJQysRdY2xVEMnDJaohOd+GDup/piOQg2Rg3G6hIYiv44uA4LROu8QjqfAhqLIbR1a0z7BagXXcYImTlMtF8tF9e+YoigfmsHBd5THovcCQXHsWKekgOJ9B6od+tE6VavfFlOl8shfUn2o/qjL5shbT9JzMUHty92kOzMkF7wtZErJk7nO2cFcYYLucZPZM+4VusOd7pLTZ2juQbqc2n8U2fGODZcjHADkwjrlYAIAAA=="
