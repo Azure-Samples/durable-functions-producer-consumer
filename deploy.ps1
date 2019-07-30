@@ -15,7 +15,7 @@ param(
     [string]$resourceGroupName,
     # Optional, Azure region to which to deploy all resources. Defaults to Central US.
     [string]$region = "centralus",
-    # Optional, name for the deployment. If not specified, deployment name will be "azuredeploy-yyyyMMdd-hhmmss" (for example, azuredeploy-20190724-083224).
+    # Optional, name for the deployment. If not specified, deployment name will be "azuredeploy-yyyyMMdd-hhmmss" (for example, azuredeploy-20190724-083224).  Deployment to set up Azure Data Explorer will have "-dexdataconnection" appended to the base name.
     [string]$deploymentName
 )
 
@@ -32,9 +32,17 @@ Write-Host "Getting subscription..."
 Select-AzSubscription -Subscription $subscriptionId >$null
 
 if (!$deploymentName) {
-    $deploymentName = "azuredeploy-"
-    $currentDateTime = (Get-Date).ToString("yyyyMMdd-hhmmss")
-    $deploymentName += $currentDateTime
+    $deploymentName = "azuredeploy"
+    $dexDeploymentName = $deploymentName + "-dexdataconnection"
+
+    $deployDateTime = (Get-Date).ToString("yyyyMMdd-hhmmss")
+    
+    # Add a datatime formatted string to the end to provide some uniqueness to the deployment name.
+    $deploymentName = $deploymentName + "-" + $deployDateTime
+    $dexDeploymentName = $dexDeploymentName + "-" + $deployDateTime
+}
+else {
+     $dexDeploymentName = $deploymentName + "-dexdataconnection"
 }
 
 # Register required RPs
@@ -99,7 +107,7 @@ Invoke-RestMethod -Method Post -Uri "$dexResourceUrl/v1/rest/mgmt" -Body (Conver
 Invoke-RestMethod -Method Post -Uri "$dexResourceUrl/v1/rest/mgmt" -Body (ConvertTo-Json $createDataMappingRequestBody) -ContentType "application/json" -Headers $headers 
 
 Write-Host "Setting up data ingestion from Event Hub -> Data Explorer..."
-New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile "azuredeploy.dexdataconnection.json" >$null
+New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile "azuredeploy.dexdataconnection.json" -Name $dexDeploymentName >$null
 
 Write-Host "Done!" -ForegroundColor Green
 Write-Host "Your Producer URLs are as follows:`nEvent Hubs: $($eventHubProducerUrl)`nService Bus: $($serviceBusProducer)`nStorage Queue: $($storageQueueProducer)`n`nView the readme for their associated payloads."
