@@ -82,6 +82,8 @@ You can deploy the solution in this repo directly to Azure by simply executing `
 * 1 Azure Function app with the Consumer Function code
   * Application settings set to the connection strings of the Service Bus, Event Hub, and Azure Storage
 
+> Note: The deployment script sets up an initial deploy from GitHub to the created Function Apps. If you wish to change any behavior of this sample, you will need to manually publish your changes _after_ first deploying the sample. Additionally, any subsequent executions of `deploy.ps1` will reset the code to the state of `master` in this repo.
+
 Upon successful deployment you'll be given the HTTP POST URLs for each of the Producer endpoints. Using the sample payloads earlier in this Readme, you'll get a response like:
 ```json
 {
