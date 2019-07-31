@@ -103,8 +103,8 @@ $headers = @{
 	Host = $dexResourceHost
 }
 
-Invoke-RestMethod -Method Post -Uri "$dexResourceUrl/v1/rest/mgmt" -Body (ConvertTo-Json $createTableRequestBody) -ContentType "application/json" -Headers $headers 
-Invoke-RestMethod -Method Post -Uri "$dexResourceUrl/v1/rest/mgmt" -Body (ConvertTo-Json $createDataMappingRequestBody) -ContentType "application/json" -Headers $headers 
+Invoke-RestMethod -Method Post -Uri "$dexResourceUrl/v1/rest/mgmt" -Body (ConvertTo-Json $createTableRequestBody) -ContentType "application/json" -Headers $headers >$null
+Invoke-RestMethod -Method Post -Uri "$dexResourceUrl/v1/rest/mgmt" -Body (ConvertTo-Json $createDataMappingRequestBody) -ContentType "application/json" -Headers $headers >$null
 
 Write-Host "Setting up data ingestion from Event Hub -> Data Explorer..."
 New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile "azuredeploy.dexdataconnection.json" -Name $dexDeploymentName >$null
