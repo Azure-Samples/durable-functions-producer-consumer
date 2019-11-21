@@ -5,6 +5,9 @@
     "ServiceBusQueueName": "sample",
     "EventHubConnection": "Endpoint=sb://...no-entity-path",
     "EventHubName": "sample",
+    "EventHubKafkaConnection": "Endpoint=sb://...no-entity-path",
+    "EventHubKafkaName": "sample",
+    "EventHubKafkaFQDN": "<eventhubnamespace>.servicebus.windows.net:9093",
     "StorageQueueConnection": "DefaultEndpointsProtocol=https;AccountName=...",
     "StorageQueueName": "sample",
 
