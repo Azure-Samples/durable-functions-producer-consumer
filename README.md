@@ -50,6 +50,23 @@ cache-control: no-cache
 
 Will post two messages across two paritions to the Event Hub specified by the `EventHubConnection` and `EventHubName` settings in your `local.settings.json` file or - when published to Azure - the Function App's application settings.
 
+## Event Hubs Kafka
+
+```http
+POST /api/PostToEventHubKafka HTTP/1.1
+Content-Type: application/json
+cache-control: no-cache
+
+{
+  "NumberOfMessagesPerPartition": 2
+}
+```
+
+Will post two messages per partition of the Event Hub specified by the `EventHubKafkaConnection`, `EventHubKafkaName` and `EventHubKafkaFQDN` settings in your `local.settings.json` file or - when published to Azure - the Function App's application settings.
+The number of messages per partition will differ by no more than 1.
+The Event Hubs Kafka sample just has producer at this point. You can observer the messages coming in using Azure Monitor from the portal.
+
+
 ## Storage Queues
 
 ```http
@@ -85,6 +102,8 @@ You can deploy the solution in this repo directly to Azure by simply executing `
 * Event Hub **Basic** namespace
   * A `collector` hub w/ 32 partitions - this is where each consumer posts messages when they consume from their source
   * An `sample` hub with 2 partitions - this is where the Producer will post messages for the EH scenario
+* Event Hub **Standard** namespace with Kafka enabled
+  * An `sample` hub with 32 partitions - this is where the Producer will post messages for the EH scenario
 * Azure Data Explorer **Dev** instance ingesting data from the above Event Hub
 * Azure Storage instance for use by the Durable Functions and the Storage Queue producer/consumer paths (`sample` queue created)
 * 1 Azure Function app with the Producer Function code

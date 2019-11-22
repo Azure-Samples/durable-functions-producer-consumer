@@ -4,10 +4,8 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using System.Configuration;
-using Microsoft.Azure.EventHubs;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
@@ -27,7 +25,7 @@ namespace Producer.EventHubsKafka
         {
             var inputObject = JObject.Parse(await request.Content.ReadAsStringAsync());
             var numberOfMessagesPerPartition = inputObject.Value<int>(@"NumberOfMessagesPerPartition");
-            var numberOfPartitions = inputObject.Value<int>(@"NumberOfPartitions");
+            var numberOfPartitions = Convert.ToInt32(Environment.GetEnvironmentVariable("EventHubKafkaPartitions"));
 
             var workTime = -1;
             if (inputObject.TryGetValue(@"WorkTime", out var workTimeVal))
@@ -39,7 +37,7 @@ namespace Producer.EventHubsKafka
             var testRunId = Guid.NewGuid().ToString();
             for (var c = 1; c <= numberOfPartitions; c++)
             {
-                var orchId = await client.StartNewAsync(nameof(GenerateMessagesForEventHub),
+                var orchId = await client.StartNewAsync(nameof(GenerateMessagesForEventHubKafka),
                     new MessagesCreateRequest
                     {
                         TestRunId = testRunId,
@@ -55,8 +53,8 @@ namespace Producer.EventHubsKafka
             return await client.WaitForCompletionOrCreateCheckStatusResponseAsync(request, orchestrationIds.First(), TimeSpan.FromMinutes(2));
         }
 
-        [FunctionName(nameof(GenerateMessagesForEventHub))]
-        public static async Task<JObject> GenerateMessagesForEventHub(
+        [FunctionName(nameof(GenerateMessagesForEventHubKafka))]
+        public static async Task<JObject> GenerateMessagesForEventHubKafka(
             [OrchestrationTrigger]DurableOrchestrationContext ctx,
             ILogger log)
         {
@@ -77,7 +75,7 @@ namespace Producer.EventHubsKafka
 
             try
             {
-                return await ctx.CallActivityAsync<bool>(nameof(PostMessagesToEventHub), messages)
+                return await ctx.CallActivityAsync<bool>(nameof(PostMessagesToEventHubKafka), messages)
                     ? JObject.FromObject(new { req.TestRunId })
                     : JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}" });
             }
@@ -97,13 +95,13 @@ namespace Producer.EventHubsKafka
             }
         });
 
-        [FunctionName(nameof(PostMessagesToEventHub))]
-        public static async Task<bool> PostMessagesToEventHub([ActivityTrigger]DurableActivityContext ctx,
+        [FunctionName(nameof(PostMessagesToEventHubKafka))]
+        public static async Task<bool> PostMessagesToEventHubKafka([ActivityTrigger]DurableActivityContext ctx,
             ILogger log)
         {
-            string brokerList = ConfigurationManager.AppSettings["EventHubKafkaFQDN"];
-            string connectionString = ConfigurationManager.AppSettings["EventHubKafkaConnection"];
-            string topic = ConfigurationManager.AppSettings["EventHubKafkaName"];
+            string brokerList = Environment.GetEnvironmentVariable("EventHubKafkaFQDN");
+            string connectionString = Environment.GetEnvironmentVariable("EventHubKafkaConnection");
+            string topic = Environment.GetEnvironmentVariable("EventHubKafkaName");
 
             var config = new ProducerConfig
             {
@@ -132,15 +130,6 @@ namespace Producer.EventHubsKafka
                         r.MessageId = m.MessageId;
                         r.TestRunId = m.TestRunId;
                         r.Message = _messageContent.Value;
-                        //new EventData(Encoding.Default.GetBytes(_messageContent.Value));
-                        //r.Properties.Add(@"MessageId", m.MessageId);
-                        //r.Properties.Add(@"EnqueueTimeUtc", m.EnqueueTimeUtc);
-                        //r.Properties.Add(@"TestRunId", m.TestRunId);
-
-                        //if (m.ConsumerWorkTime > 0)
-                        //{
-                        //    r.Properties.Add(@"workTime", m.ConsumerWorkTime);
-                        //}
 
                         return r;
                     }

@@ -29,10 +29,6 @@
     <None Update="host.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-    <None Update="app.settings.json">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-    </None>
     <None Update="local.settings.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
