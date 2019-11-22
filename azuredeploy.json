@@ -287,7 +287,6 @@
         "[resourceId('Microsoft.Web/serverfarms', parameters('FunctionPlanName'))]",
         "[resourceId('Microsoft.ServiceBus/namespaces', parameters('ServiceBusNamespaceName'))]",
         "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubNamespaceName'))]",
-        "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubKafkaNamespaceName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
       ],
       "kind": "functionapp",
@@ -327,22 +326,6 @@
             {
               "name": "EventHubName",
               "value": "sample"
-            },
-            {
-              "name": "EventHubKafkaConnection",
-              "value": "[listkeys(variables('ehkAuthRuleResourceId'), '2017-04-01').primaryConnectionString]"
-            },
-            {
-              "name": "EventHubKafkaName",
-              "value": "sample"
-            },
-            {
-              "name": "EventHubKafkaFQDN",
-              "value": "[concat(parameters('EventHubKafkaNamespaceName'), '.servicebus.windows.net:9093')]"
-            },
-            {
-              "name": "EventHubKafkaPartitions",
-              "value": "32"
             },
             {
               "name": "FUNCTIONS_EXTENSION_RUNTIME",
@@ -412,6 +395,7 @@
         "[resourceId('Microsoft.Web/serverfarms', parameters('FunctionPlanName'))]",
         "[resourceId('Microsoft.ServiceBus/namespaces', parameters('ServiceBusNamespaceName'))]",
         "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubNamespaceName'))]",
+        "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubKafkaNamespaceName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
       ],
       "kind": "functionapp",
@@ -447,6 +431,22 @@
             {
               "name": "EventHubName",
               "value": "sample"
+            },
+            {
+              "name": "EventHubKafkaConnection",
+              "value": "[listkeys(variables('ehkAuthRuleResourceId'), '2017-04-01').primaryConnectionString]"
+            },
+            {
+              "name": "EventHubKafkaName",
+              "value": "sample"
+            },
+            {
+              "name": "EventHubKafkaFQDN",
+              "value": "[concat(parameters('EventHubKafkaNamespaceName'), '.servicebus.windows.net:9093')]"
+            },
+            {
+              "name": "EventHubKafkaPartitions",
+              "value": "32"
             },
             {
               "name": "FUNCTIONS_EXTENSION_RUNTIME",
