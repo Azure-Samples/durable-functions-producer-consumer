@@ -21,7 +21,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Update="EventHubsKafka\MessagesCreateRequest.cs">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </Compile>
   </ItemGroup>
   <ItemGroup>
