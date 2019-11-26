@@ -49,11 +49,11 @@
       "sku": {
         "name": "Basic",
         "tier": "Basic",
-        "capacity": 1
+        "capacity": 13
       },
       "properties": {
-        "isAutoInflateEnabled": false,
-        "maximumThroughputUnits": 0,
+        "isAutoInflateEnabled": true,
+        "maximumThroughputUnits": 20,
         "kafkaEnabled": false
       }
     },
@@ -389,6 +389,10 @@
             {
               "name": "EventHubName",
               "value": "sample"
+            },
+            {
+              "name": "EventHubPartitions",
+              "value": "32"
             },
             {
               "name": "FUNCTIONS_EXTENSION_RUNTIME",
