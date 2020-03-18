@@ -52,9 +52,9 @@
         "sample": "[variables('sampleName')]"
       },
       "sku": {
-        "name": "Basic",
-        "tier": "Basic",
-        "capacity": 13
+        "name": "Standard",
+        "tier": "Standard",
+        "capacity": 1
       },
       "properties": {
         "isAutoInflateEnabled": true,
