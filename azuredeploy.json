@@ -29,12 +29,17 @@
     "EventHubNamespaceName": {
       "defaultValue": "[concat('eh', uniqueString(subscription().id, resourceGroup().id))]",
       "type": "string"
+    },
+    "EventHubKafkaNamespaceName": {
+      "defaultValue": "[concat('ehk', uniqueString(subscription().id, resourceGroup().id))]",
+      "type": "string"
     }
   },
   "variables": {
     "sampleName": "azure-durable-functions-producer-consumer",
     "producerFunctionId": "[resourceId('Microsoft.Web/Sites', parameters('ProducerFunctionAppName'))]",
     "ehAuthRuleResourceId": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', parameters('EventHubNamespaceName'), 'RootManageSharedAccessKey')]",
+    "ehkAuthRuleResourceId": "[resourceId('Microsoft.EventHub/namespaces/authorizationRules', parameters('EventHubKafkaNamespaceName'), 'RootManageSharedAccessKey')]",
     "sbAuthRuleResourceId": "[resourceId('Microsoft.ServiceBus/namespaces/authorizationRules', parameters('ServiceBusNamespaceName'), 'RootManageSharedAccessKey')]"
   },
   "resources": [
@@ -47,9 +52,9 @@
         "sample": "[variables('sampleName')]"
       },
       "sku": {
-        "name": "Basic",
-        "tier": "Basic",
-        "capacity": 13
+        "name": "Standard",
+        "tier": "Standard",
+        "capacity": 1
       },
       "properties": {
         "isAutoInflateEnabled": true,
@@ -81,6 +86,42 @@
       "location": "[resourceGroup().location]",
       "dependsOn": [
         "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubNamespaceName'))]"
+      ],
+      "properties": {
+        "messageRetentionInDays": 1,
+        "partitionCount": 32,
+        "status": "Active"
+      },
+      "tags": {
+        "sample": "[variables('sampleName')]"
+      }
+    },
+    {
+      "name": "[parameters('EventHubKafkaNamespaceName')]",
+      "type": "Microsoft.EventHub/namespaces",
+      "apiVersion": "2017-04-01",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "sample": "[variables('sampleName')]"
+      },
+      "sku": {
+        "name": "Standard",
+        "tier": "Standard",
+        "capacity": 13
+      },
+      "properties": {
+        "isAutoInflateEnabled": false,
+        "maximumThroughputUnits": 20,
+        "kafkaEnabled": true
+      }
+    },
+    {
+      "type": "Microsoft.EventHub/namespaces/eventhubs",
+      "apiVersion": "2017-04-01",
+      "name": "[concat(parameters('EventHubKafkaNamespaceName'), '/sample')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubKafkaNamespaceName'))]"
       ],
       "properties": {
         "messageRetentionInDays": 1,
@@ -354,6 +395,7 @@
         "[resourceId('Microsoft.Web/serverfarms', parameters('FunctionPlanName'))]",
         "[resourceId('Microsoft.ServiceBus/namespaces', parameters('ServiceBusNamespaceName'))]",
         "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubNamespaceName'))]",
+        "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubKafkaNamespaceName'))]",
         "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
       ],
       "kind": "functionapp",
@@ -389,6 +431,22 @@
             {
               "name": "EventHubName",
               "value": "sample"
+            },
+            {
+              "name": "EventHubKafkaConnection",
+              "value": "[listkeys(variables('ehkAuthRuleResourceId'), '2017-04-01').primaryConnectionString]"
+            },
+            {
+              "name": "EventHubKafkaName",
+              "value": "sample"
+            },
+            {
+              "name": "EventHubKafkaFQDN",
+              "value": "[concat(parameters('EventHubKafkaNamespaceName'), '.servicebus.windows.net:9093')]"
+            },
+            {
+              "name": "EventHubKafkaPartitions",
+              "value": "32"
             },
             {
               "name": "EventHubPartitions",
@@ -466,6 +524,10 @@
     "eventHubProducer": {
       "type": "string",
       "value": "[concat('https://', parameters('ProducerFunctionAppName'), '.azurewebsites.net/api/PostToEventHub?code=', listkeys(concat(variables('producerFunctionId'), '/host/default/'),'2016-08-01').functionKeys.default)]"
+    },
+    "eventHubKafkaProducer": {
+      "type": "string",
+      "value": "[concat('https://', parameters('ProducerFunctionAppName'), '.azurewebsites.net/api/PostToEventHubKafka?code=', listkeys(concat(variables('producerFunctionId'), '/host/default/'),'2016-08-01').functionKeys.default)]"
     },
     "serviceBusProducer": {
       "type": "string",

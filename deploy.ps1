@@ -37,7 +37,7 @@ if (!$deploymentName) {
 
     $deployDateTime = (Get-Date).ToString("yyyyMMdd-hhmmss")
     
-    # Add a datatime formatted string to the end to provide some uniqueness to the deployment name.
+    # Add a datetime formatted string to the end to provide some uniqueness to the deployment name.
     $deploymentName = $deploymentName + "-" + $deployDateTime
     $dexDeploymentName = $dexDeploymentName + "-" + $deployDateTime
 }
@@ -76,6 +76,7 @@ $dexResourceHost = $initialDeployResult.Outputs.Item("dexResourceHost").Value
 $dexResourceUrl = "https://$dexResourceHost"
 
 $eventHubProducerUrl = $initialDeployResult.Outputs.Item("eventHubProducer").Value
+$eventHubKafkaProducerUrl = $initialDeployResult.Outputs.Item("eventHubKafkaProducer").Value
 $serviceBusProducer = $initialDeployResult.Outputs.Item("serviceBusProducer").Value
 $storageQueueProducer = $initialDeployResult.Outputs.Item("storageQueueProducer").Value
 $storageAccount = $initialDeployResult.Outputs.Item("storageAccountName").Value
@@ -110,4 +111,4 @@ Write-Host "Setting up data ingestion from Event Hub -> Data Explorer..."
 New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile "azuredeploy.dexdataconnection.json" -Name $dexDeploymentName >$null
 
 Write-Host "Done!" -ForegroundColor Green
-Write-Host "Your Producer URLs are as follows:`nEvent Hubs: $($eventHubProducerUrl)`nService Bus: $($serviceBusProducer)`nStorage Queue: $($storageQueueProducer)`n`nView the readme for their associated payloads."
+Write-Host "Your Producer URLs are as follows:`nEvent Hubs: $($eventHubProducerUrl)`nEvent Hubs Kafka: $($eventHubKafkaProducerUrl)`nService Bus: $($serviceBusProducer)`nStorage Queue: $($storageQueueProducer)`n`nView the readme for their associated payloads."
