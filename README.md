@@ -102,13 +102,9 @@ You can deploy the solution in this repo directly to Azure by simply executing `
 * Service Bus **Standard** namespace with a `sample` queue
 * Event Hub **Basic** namespace
   * A `collector` hub w/ 32 partitions - this is where each consumer posts messages when they consume from their source
-<<<<<<< HEAD
-  * An `sample` hub with 2 partitions - this is where the Producer will post messages for the EH scenario
-* Event Hub **Standard** namespace with Kafka enabled
-  * An `sample` hub with 32 partitions - this is where the Producer will post messages using Kafka protocol for the EH-Kafka scenario
-=======
   * A `sample` hub with 32 partitions - this is where the Producer will post messages for the EH scenario
->>>>>>> 1b034023b5da8208f87c74f7d71a88653e181528
+* Event Hub **Standard** namespace with Kafka enabled
+  * A `sample` hub with 32 partitions - this is where the Producer will post messages using Kafka protocol for the EH-Kafka scenario
 * Azure Data Explorer **Dev** instance ingesting data from the above Event Hub
 * Azure Storage instance for use by the Durable Functions and the Storage Queue producer/consumer paths (`sample` queue created)
 * 1 Azure Function app with the Producer Function code
