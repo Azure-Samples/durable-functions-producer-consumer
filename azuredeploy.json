@@ -449,6 +449,10 @@
               "value": "32"
             },
             {
+              "name": "EventHubPartitions",
+              "value": "32"
+            },
+            {
               "name": "FUNCTIONS_EXTENSION_RUNTIME",
               "value": "dotnet"
             },

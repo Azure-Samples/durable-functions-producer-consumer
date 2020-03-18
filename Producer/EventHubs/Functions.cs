@@ -24,7 +24,7 @@ namespace Producer.EventHubs
         {
             var inputObject = JObject.Parse(await request.Content.ReadAsStringAsync());
             var numberOfMessagesPerPartition = inputObject.Value<int>(@"NumberOfMessagesPerPartition");
-            var numberOfPartitions = inputObject.Value<int>(@"NumberOfPartitions");
+            var numberOfPartitions = Convert.ToInt32(Environment.GetEnvironmentVariable("EventHubPartitions"));
 
             var workTime = -1;
             if (inputObject.TryGetValue(@"WorkTime", out var workTimeVal))
@@ -37,16 +37,15 @@ namespace Producer.EventHubs
             for (var c = 1; c <= numberOfPartitions; c++)
             {
                 var partitionKey = Guid.NewGuid().ToString();
-                var orchId = await client.StartNewAsync(nameof(GenerateMessagesForEventHubPartition),
-                    new PartitionCreateRequest
+                var orchId = await client.StartNewAsync(nameof(GenerateMessagesForEventHub),
+                    new MessagesCreateRequest
                     {
                         TestRunId = testRunId,
-                        PartitionId = partitionKey,
                         NumberOfMessagesPerPartition = numberOfMessagesPerPartition,
                         ConsumerWorkTime = workTime,
                     });
 
-                log.LogTrace($@"Kicked off message creation for session {partitionKey}...");
+                log.LogTrace($@"Kicked off message creation for session {c}...");
 
                 orchestrationIds.Add(orchId);
             }
@@ -54,20 +53,19 @@ namespace Producer.EventHubs
             return await client.WaitForCompletionOrCreateCheckStatusResponseAsync(request, orchestrationIds.First(), TimeSpan.FromMinutes(2));
         }
 
-        [FunctionName(nameof(GenerateMessagesForEventHubPartition))]
-        public static async Task<JObject> GenerateMessagesForEventHubPartition(
+        [FunctionName(nameof(GenerateMessagesForEventHub))]
+        public static async Task<JObject> GenerateMessagesForEventHub(
             [OrchestrationTrigger]DurableOrchestrationContext ctx,
             ILogger log)
         {
-            var req = ctx.GetInput<PartitionCreateRequest>();
+            var req = ctx.GetInput<MessagesCreateRequest>();
 
             var messages = Enumerable.Range(1, req.NumberOfMessagesPerPartition)
                     .Select(m =>
                     {
                         var enqueueTime = DateTime.UtcNow;
-                        return new PartitionMessagesCreateRequest
+                        return new MessagesSendRequest
                         {
-                            PartitionId = req.PartitionId,
                             MessageId = m,
                             EnqueueTimeUtc = enqueueTime,
                             TestRunId = req.TestRunId,
@@ -77,7 +75,7 @@ namespace Producer.EventHubs
 
             try
             {
-                return await ctx.CallActivityAsync<bool>(nameof(PostMessagesToEventHubPartition), messages)
+                return await ctx.CallActivityAsync<bool>(nameof(PostMessagesToEventHub), messages)
                     ? JObject.FromObject(new { req.TestRunId })
                     : JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}" });
             }
@@ -97,18 +95,17 @@ namespace Producer.EventHubs
             }
         });
 
-        [FunctionName(nameof(PostMessagesToEventHubPartition))]
-        public static async Task<bool> PostMessagesToEventHubPartition([ActivityTrigger]DurableActivityContext ctx,
+        [FunctionName(nameof(PostMessagesToEventHub))]
+        public static async Task<bool> PostMessagesToEventHub([ActivityTrigger]DurableActivityContext ctx,
             [EventHub("%EventHubName%", Connection = @"EventHubConnection")]IAsyncCollector<EventData> queueMessages,
             ILogger log)
         {
-            var messages = ctx.GetInput<IEnumerable<PartitionMessagesCreateRequest>>();
+            var messages = ctx.GetInput<IEnumerable<MessagesSendRequest>>();
 
             foreach (var messageToPost in messages.Select(m =>
                 {
                     var r = new EventData(Encoding.Default.GetBytes(_messageContent.Value));
                     r.Properties.Add(@"MessageId", m.MessageId);
-                    r.Properties.Add(@"PartitionId", m.PartitionId);
                     r.Properties.Add(@"EnqueueTimeUtc", m.EnqueueTimeUtc);
                     r.Properties.Add(@"TestRunId", m.TestRunId);
 
@@ -133,21 +130,21 @@ namespace Producer.EventHubs
                     }
                     catch (Exception ex)
                     {
-                        log.LogError(ex, $@"Error posting message for partition '{messageToPost.Properties[@"PartitionId"]}'. Retrying...");
+                        log.LogError(ex, $@"Error posting message with TestRunID '{messageToPost.Properties[@"TestRunId"]}' and MessageId '{messageToPost.Properties[@"MessageId"]}'. Retrying...");
                         retry = true;
                     }
 
                     if (retry && retryCount >= MAX_RETRY_ATTEMPTS)
                     {
-                        log.LogError($@"Unable to post message to {messageToPost.Properties[@"PartitionId"]} after {retryCount} attempt(s). Giving up.");
+                        log.LogError($@"Unable to post message with TestRunID '{messageToPost.Properties[@"TestRunId"]}' and MessageId '{messageToPost.Properties[@"MessageId"]}' after {retryCount} attempt(s). Giving up.");
                         break;
                     }
                     else
                     {
 #if DEBUG
-                        log.LogTrace($@"Posted message {messageToPost.Properties[@"MessageId"]} (Size: {messageToPost.Body.Count} bytes) for partition '{messageToPost.Properties[@"PartitionId"]}' in {retryCount} attempt(s)");
+                        log.LogTrace($@"Posted message {messageToPost.Properties[@"MessageId"]} (Size: {messageToPost.Body.Count} bytes) in {retryCount} attempt(s)");
 #else
-                log.LogTrace($@"Posted message for partition '{messageToPost.Properties[@"PartitionId"]}' in {retryCount} attempt(s)");
+                log.LogTrace($@"Posted message with TestRunID '{messageToPost.Properties[@"TestRunId"]}' and MessageId {messageToPost.Properties[@"MessageId"]} in {retryCount} attempt(s)");
 #endif
                     }
                 } while (retry);
