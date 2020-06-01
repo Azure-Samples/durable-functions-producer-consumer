@@ -13,6 +13,10 @@
     "StorageQueueConnection": "DefaultEndpointsProtocol=https;AccountName=...",
     "StorageQueueName": "sample",
 
+    "CosmosDbConnection": null,
+    "CosmosDbDatabaseName": null,
+    "CosmosDbCollectionName": null,
+
     "FUNCTIONS_WORKER_RUNTIME": "dotnet",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true",
     "DFTaskHubName": "producerlocalTaskHub"

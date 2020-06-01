@@ -9,12 +9,12 @@ using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
-namespace Producer.StorageQueues
+namespace Producer.CosmosDb
 {
     public static class Functions
     {
-        [FunctionName(nameof(PostToStorageQueue))]
-        public static async Task<HttpResponseMessage> PostToStorageQueue(
+        [FunctionName(nameof(PostToCosmosDb))]
+        public static async Task<HttpResponseMessage> PostToCosmosDb(
             [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestMessage request,
             [OrchestrationClient]DurableOrchestrationClient client,
             ILogger log)
@@ -29,7 +29,7 @@ namespace Producer.StorageQueues
             }
 
             var testRunId = Guid.NewGuid().ToString();
-            var orchId = await client.StartNewAsync(nameof(GenerateMessagesForStorageQueue),
+            var orchId = await client.StartNewAsync(nameof(GenerateMessagesForCosmosDb),
                     (numberOfMessages, testRunId, workTime));
 
             log.LogTrace($@"Kicked off {numberOfMessages} message creation...");
@@ -37,8 +37,8 @@ namespace Producer.StorageQueues
             return await client.WaitForCompletionOrCreateCheckStatusResponseAsync(request, orchId, TimeSpan.FromMinutes(2));
         }
 
-        [FunctionName(nameof(GenerateMessagesForStorageQueue))]
-        public static async Task<JObject> GenerateMessagesForStorageQueue(
+        [FunctionName(nameof(GenerateMessagesForCosmosDb))]
+        public static async Task<JObject> GenerateMessagesForCosmosDb(
             [OrchestrationTrigger]DurableOrchestrationContext ctx,
             ILogger log)
         {
@@ -49,11 +49,11 @@ namespace Producer.StorageQueues
             {
                 try
                 {
-                    activities.Add(ctx.CallActivityAsync<bool>(nameof(PostMessageToStorageQueue), (i, req.testRunId, req.workTime)));
+                    activities.Add(ctx.CallActivityAsync<bool>(nameof(PostMessageToCosmosDb), (i, req.testRunId, req.workTime)));
                 }
                 catch (Exception ex)
                 {
-                    log.LogError(ex, @"An error occurred queuing message generation to Storage Queue");
+                    log.LogError(ex, @"An error occurred queuing message generation to Cosmos DB");
                     return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex.ToString()}" });
                 }
             }
@@ -72,9 +72,9 @@ namespace Producer.StorageQueues
             }
         });
 
-        [FunctionName(nameof(PostMessageToStorageQueue))]
-        public static async Task<bool> PostMessageToStorageQueue([ActivityTrigger]DurableActivityContext ctx,
-            [Queue("%StorageQueueName%", Connection = @"StorageQueueConnection")]IAsyncCollector<JObject> queueMessages,
+        [FunctionName(nameof(PostMessageToCosmosDb))]
+        public static async Task<bool> PostMessageToCosmosDb([ActivityTrigger]DurableActivityContext ctx,
+            [CosmosDB("%CosmosDbDatabaseName%", "%CosmosDbCollectionName%", ConnectionStringSetting = @"CosmosDbConnection", PartitionKey = "/TestRunId", CreateIfNotExists = true)]IAsyncCollector<JObject> queueMessages,
             ILogger log)
         {
             var msgDetails = ctx.GetInput<(int id, string runId, int workTime)>();
@@ -85,8 +85,8 @@ namespace Producer.StorageQueues
             {
                 Content = _messageContent.Value,
                 EnqueueTimeUtc = DateTime.UtcNow,
-                MessageId = msgDetails.id,
-                TestRunId = msgDetails.runId
+                MessageId = msgDetails.id, // <- cosmos id field?
+                TestRunId = msgDetails.runId // <- cosmos partition field?
             });
 
             if (msgDetails.workTime > 0)
