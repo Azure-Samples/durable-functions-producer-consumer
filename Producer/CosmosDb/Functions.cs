@@ -5,6 +5,7 @@ using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Host;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -74,8 +75,12 @@ namespace Producer.CosmosDb
 
         [FunctionName(nameof(PostMessageToCosmosDb))]
         public static async Task<bool> PostMessageToCosmosDb([ActivityTrigger]DurableActivityContext ctx,
-            [CosmosDB("%CosmosDbDatabaseName%", "%CosmosDbCollectionName%", ConnectionStringSetting = @"CosmosDbConnection", PartitionKey = "/TestRunId", CreateIfNotExists = true)]IAsyncCollector<JObject> queueMessages,
-            ILogger log)
+            [CosmosDB(databaseName: "%CosmosDbDatabaseName%", 
+                collectionName: "%CosmosDbCollectionName%", 
+                ConnectionStringSetting = @"CosmosDbConnection", 
+                PartitionKey = "/TestRunId", 
+                CreateIfNotExists = true)]IAsyncCollector<JObject> queueMessages,
+                ILogger log)
         {
             var msgDetails = ctx.GetInput<(int id, string runId, int workTime)>();
             var retryCount = 0;
