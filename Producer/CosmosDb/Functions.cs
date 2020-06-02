@@ -50,7 +50,7 @@ namespace Producer.CosmosDb
             {
                 try
                 {
-                    activities.Add(ctx.CallActivityAsync<bool>(nameof(PostMessageToCosmosDb), (i, req.testRunId, req.workTime)));
+                    activities.Add(ctx.CallActivityAsync<bool>(nameof(PostMessageToCosmosDb), (Guid.NewGuid(), req.testRunId, req.workTime)));
                 }
                 catch (Exception ex)
                 {
@@ -75,14 +75,14 @@ namespace Producer.CosmosDb
 
         [FunctionName(nameof(PostMessageToCosmosDb))]
         public static async Task<bool> PostMessageToCosmosDb([ActivityTrigger]DurableActivityContext ctx,
-            [CosmosDB(databaseName: "%CosmosDbDatabaseName%", 
-                collectionName: "%CosmosDbCollectionName%", 
-                ConnectionStringSetting = @"CosmosDbConnection", 
-                PartitionKey = "/TestRunId", 
+            [CosmosDB(databaseName: "%CosmosDbDatabaseName%",
+                collectionName: "%CosmosDbCollectionName%",
+                ConnectionStringSetting = @"CosmosDbConnection",
+                PartitionKey = "/TestRunId",
                 CreateIfNotExists = true)]IAsyncCollector<JObject> queueMessages,
                 ILogger log)
         {
-            var msgDetails = ctx.GetInput<(int id, string runId, int workTime)>();
+            var msgDetails = ctx.GetInput<(Guid id, string runId, int workTime)>();
             var retryCount = 0;
             var retry = false;
 
@@ -90,7 +90,7 @@ namespace Producer.CosmosDb
             {
                 Content = _messageContent.Value,
                 EnqueueTimeUtc = DateTime.UtcNow,
-                MessageId = msgDetails.id, // <- cosmos id field?
+                id = msgDetails.id, // <- cosmos id field?
                 TestRunId = msgDetails.runId // <- cosmos partition field?
             });
 
@@ -109,19 +109,19 @@ namespace Producer.CosmosDb
                 }
                 catch (Exception ex)
                 {
-                    log.LogError(ex, $@"Error posting message {messageToPost.Value<int>(@"MessageId")}. Retrying...");
+                    log.LogError(ex, $@"Error posting message {msgDetails.id}. Retrying...");
                     retry = true;
                 }
 
                 if (retry && retryCount >= MAX_RETRY_ATTEMPTS)
                 {
-                    log.LogError($@"Unable to post message {messageToPost.Value<int>(@"MessageId")} after {retryCount} attempt(s). Giving up.");
+                    log.LogError($@"Unable to post message {msgDetails.id} after {retryCount} attempt(s). Giving up.");
                     break;
                 }
                 else
                 {
 #if DEBUG
-                    log.LogTrace($@"Posted message {messageToPost.Value<int>(@"MessageId")} (Size: {_messageContent.Value.Length} bytes) in {retryCount} attempt(s)");
+                    log.LogTrace($@"Posted message {msgDetails.id} (Size: {_messageContent.Value.Length} bytes) in {retryCount} attempt(s)");
 #else
                 log.LogTrace($@"Posted message in {retryCount} attempt(s)");
 #endif
