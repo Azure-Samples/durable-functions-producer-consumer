@@ -82,6 +82,19 @@ cache-control: no-cache
 
 Will post two messages to the Storage Queue specified by the `StorageQueueConnection` and `StorageQueueName` settings in your `local.settings.json` file or - when published to Azure - the Function App's application settings.
 
+## Event Grid
+```
+POST /api/PostToEventGrid HTTP/1.1
+Host: localhost:7071
+Content-Type: application/json
+
+{
+    "NumberOfMessages": 2
+}
+```
+Will post two messages to the Event Grid Topic specified by the `EventGridTopicEndpoint` and `EventGridTopicKey` settings in your `local.settings.json` file or - when published to Azure - the Function App's application settings.
+
+
 ## Implementation
 
 ### Fan out/in

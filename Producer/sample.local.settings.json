@@ -9,9 +9,20 @@
     "EventHubKafkaName": "sample",
     "EventHubKafkaFQDN": "<eventhubnamespace>.servicebus.windows.net:9093",
     "EventHubKafkaPartitions": "32",
-    "EventHubPartitions": "32",
     "StorageQueueConnection": "DefaultEndpointsProtocol=https;AccountName=...",
-    "StorageQueueName": "sample",
+    "StorageQueueName": "...",
+    "EventGridTopicEndpoint": "https://....eventgrid.azure.net/api/events",
+    "EventGridTopicKey": "...",
+
+    "AWS_ACCESS_KEY_ID": "...",
+    "AWS_SECRET_ACCESS_KEY": "...",
+    "SqsServiceUrl": "https://sqs.<region>.amazonaws.com",
+    "SqsQueueName": "...",
+    "AwsAccountId": "...",
+
+    "GcpProjectId": "...",
+    "GcpTopicId": "...",
+    "GOOGLE_APPLICATION_CREDENTIALS": "GcpPubSub/authfile/gcpPubSubCreds.json",
 
     "CosmosDbConnection": null,
     "CosmosDbDatabaseName": null,
