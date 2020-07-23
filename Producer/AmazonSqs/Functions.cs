@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Amazon.SQS;
 using Amazon.SQS.Model;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -17,12 +19,12 @@ namespace Producer.AmazonSqs
     public static class Functions
     {
         [FunctionName(nameof(PostToSimpleQueue))]
-        public static async Task<HttpResponseMessage> PostToSimpleQueue(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestMessage request,
-            [OrchestrationClient]DurableOrchestrationClient client,
+        public static async Task<IActionResult> PostToSimpleQueue(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest request,
+            [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            var inputObject = JObject.Parse(await request.Content.ReadAsStringAsync());
+            var inputObject = JObject.Parse(await request.ReadAsStringAsync());
             var numberOfMessagesPerGroup = inputObject.Value<int>(@"NumberOfMessagesPerGroup");
             var numberOfGroups = inputObject.Value<int>(@"NumberOfGroups");
 
@@ -56,7 +58,7 @@ namespace Producer.AmazonSqs
 
         [FunctionName(nameof(GenerateMessagesForSqsGroup))]
         public static async Task<JObject> GenerateMessagesForSqsGroup(
-            [OrchestrationTrigger]DurableOrchestrationContext ctx,
+            [OrchestrationTrigger] IDurableOrchestrationContext ctx,
             ILogger log)
         {
             var req = ctx.GetInput<GroupCreateRequest>();
@@ -83,16 +85,14 @@ namespace Producer.AmazonSqs
             catch (Exception ex)
             {
                 log.LogError(ex, @"An error occurred queuing message generation to Simple Queue");
-                return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex.ToString()}" });
+                return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex}" });
             }
         }
 
         private static readonly Lazy<string> _messageContent = new Lazy<string>(() =>
         {
-            using (var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt")))
-            {
-                return sr.ReadToEnd();
-            }
+            using var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt"));
+            return sr.ReadToEnd();
         });
 
         private const int MAX_RETRY_ATTEMPTS = 10;
@@ -121,7 +121,7 @@ namespace Producer.AmazonSqs
         }
 
         [FunctionName(nameof(PostMessagesToSimpleQueue))]
-        public static async Task<bool> PostMessagesToSimpleQueue([ActivityTrigger]DurableActivityContext ctx,
+        public static async Task<bool> PostMessagesToSimpleQueue([ActivityTrigger] IDurableActivityContext ctx,
             ILogger log)
         {
             var messages = ctx.GetInput<IEnumerable<GroupMessagesCreateRequest>>();
