@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -17,12 +19,12 @@ namespace Producer.ServiceBus
     public static class Functions
     {
         [FunctionName(nameof(PostToServiceBusQueue))]
-        public static async Task<HttpResponseMessage> PostToServiceBusQueue(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestMessage request,
-            [OrchestrationClient]DurableOrchestrationClient client,
+        public static async Task<IActionResult> PostToServiceBusQueue(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest request,
+            [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            var inputObject = JObject.Parse(await request.Content.ReadAsStringAsync());
+            var inputObject = JObject.Parse(await request.ReadAsStringAsync());
             var numberOfMessagesPerSession = inputObject.Value<int>(@"NumberOfMessagesPerSession");
             var numberOfSessions = inputObject.Value<int>(@"NumberOfSessions");
 
@@ -56,7 +58,7 @@ namespace Producer.ServiceBus
 
         [FunctionName(nameof(GenerateMessagesForServiceBusSession))]
         public static async Task<JObject> GenerateMessagesForServiceBusSession(
-            [OrchestrationTrigger]DurableOrchestrationContext ctx,
+            [OrchestrationTrigger] IDurableOrchestrationContext ctx,
             ILogger log)
         {
             var req = ctx.GetInput<SessionCreateRequest>();
@@ -68,7 +70,7 @@ namespace Producer.ServiceBus
                         {
                             SessionId = req.SessionId,
                             MessageId = m,
-                            EnqueueTimeUtc = DateTime.UtcNow,
+                            EnqueueTimeUtc = ctx.CurrentUtcDateTime,
                             TestRunId = req.TestRunId,
                             ConsumerWorkTime = req.ConsumerWorkTime,
                         };
@@ -83,23 +85,21 @@ namespace Producer.ServiceBus
             catch (Exception ex)
             {
                 log.LogError(ex, @"An error occurred queuing message generation to SB queue");
-                return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex.ToString()}" });
+                return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex}" });
             }
         }
 
         private static readonly Lazy<byte[]> _messageContent = new Lazy<byte[]>(() =>
         {
-            using (var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt")))
-            {
-                return Encoding.Default.GetBytes(sr.ReadToEnd());
-            }
+            using var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt"));
+            return Encoding.Default.GetBytes(sr.ReadToEnd());
         });
 
         private const int MAX_RETRY_ATTEMPTS = 10;
 
         [FunctionName(nameof(PostMessagesToServiceBusQueue))]
-        public static async Task<bool> PostMessagesToServiceBusQueue([ActivityTrigger]DurableActivityContext ctx,
-            [ServiceBus("%ServiceBusQueueName%", Connection = @"ServiceBusConnection")]IAsyncCollector<Message> queueMessages,
+        public static async Task<bool> PostMessagesToServiceBusQueue([ActivityTrigger] IDurableActivityContext ctx,
+            [ServiceBus("%ServiceBusQueueName%", Connection = @"ServiceBusConnection")] IAsyncCollector<Message> queueMessages,
             ILogger log)
         {
             var messages = ctx.GetInput<IEnumerable<SessionMessagesCreateRequest>>();

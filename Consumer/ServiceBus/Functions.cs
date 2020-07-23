@@ -20,7 +20,7 @@ namespace Consumer.ServiceBus
             ILogger log)
         {
             var timestamp = DateTime.UtcNow;
-            log.LogTrace($@"[{sbMessage.UserProperties[@"TestRunId"]}]: Message received at {timestamp}: {JObject.FromObject(sbMessage).ToString()}");
+            log.LogTrace($@"[{sbMessage.UserProperties[@"TestRunId"]}]: Message received at {timestamp}: {JObject.FromObject(sbMessage)}");
 
             var enqueuedTime = sbMessage.ScheduledEnqueueTimeUtc;
             var elapsedTimeMs = (timestamp - enqueuedTime).TotalMilliseconds;

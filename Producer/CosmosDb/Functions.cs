@@ -1,11 +1,12 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
-using Microsoft.Azure.WebJobs.Host;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -15,12 +16,12 @@ namespace Producer.CosmosDb
     public static class Functions
     {
         [FunctionName(nameof(PostToCosmosDb))]
-        public static async Task<HttpResponseMessage> PostToCosmosDb(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestMessage request,
-            [OrchestrationClient]DurableOrchestrationClient client,
+        public static async Task<IActionResult> PostToCosmosDb(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest request,
+            [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            var inputObject = JObject.Parse(await request.Content.ReadAsStringAsync());
+            var inputObject = JObject.Parse(await request.ReadAsStringAsync());
             var numberOfMessages = inputObject.Value<int>(@"NumberOfMessages");
 
             var workTime = -1;
@@ -31,7 +32,7 @@ namespace Producer.CosmosDb
 
             var testRunId = Guid.NewGuid().ToString();
             var orchId = await client.StartNewAsync(nameof(GenerateMessagesForCosmosDb),
-                    (numberOfMessages, testRunId, workTime));
+                    Tuple.Create(numberOfMessages, testRunId, workTime));
 
             log.LogTrace($@"Kicked off {numberOfMessages} message creation...");
 
@@ -40,7 +41,7 @@ namespace Producer.CosmosDb
 
         [FunctionName(nameof(GenerateMessagesForCosmosDb))]
         public static async Task<JObject> GenerateMessagesForCosmosDb(
-            [OrchestrationTrigger]DurableOrchestrationContext ctx,
+            [OrchestrationTrigger] IDurableOrchestrationContext ctx,
             ILogger log)
         {
             var req = ctx.GetInput<(int numOfMessages, string testRunId, int workTime)>();
@@ -50,12 +51,12 @@ namespace Producer.CosmosDb
             {
                 try
                 {
-                    activities.Add(ctx.CallActivityAsync<bool>(nameof(PostMessageToCosmosDb), (Guid.NewGuid(), req.testRunId, req.workTime)));
+                    activities.Add(ctx.CallActivityAsync<bool>(nameof(PostMessageToCosmosDb), (ctx.NewGuid(), req.testRunId, req.workTime)));
                 }
                 catch (Exception ex)
                 {
                     log.LogError(ex, @"An error occurred queuing message generation to Cosmos DB");
-                    return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex.ToString()}" });
+                    return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex}" });
                 }
             }
 
@@ -67,14 +68,12 @@ namespace Producer.CosmosDb
         private const int MAX_RETRY_ATTEMPTS = 10;
         private static readonly Lazy<string> _messageContent = new Lazy<string>(() =>
         {
-            using (var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt")))
-            {
-                return sr.ReadToEnd();
-            }
+            using var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt"));
+            return sr.ReadToEnd();
         });
 
         [FunctionName(nameof(PostMessageToCosmosDb))]
-        public static async Task<bool> PostMessageToCosmosDb([ActivityTrigger]DurableActivityContext ctx,
+        public static async Task<bool> PostMessageToCosmosDb([ActivityTrigger] IDurableActivityContext ctx,
             [CosmosDB(databaseName: "%CosmosDbDatabaseName%",
                 collectionName: "%CosmosDbCollectionName%",
                 ConnectionStringSetting = @"CosmosDbConnection",
@@ -90,7 +89,7 @@ namespace Producer.CosmosDb
             {
                 Content = _messageContent.Value,
                 EnqueueTimeUtc = DateTime.UtcNow,
-                id = msgDetails.id, // <- cosmos id field?
+                msgDetails.id, // <- cosmos id field?
                 TestRunId = msgDetails.runId // <- cosmos partition field?
             });
 

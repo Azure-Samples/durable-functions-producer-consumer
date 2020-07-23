@@ -2,12 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.EventHubs;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -17,12 +19,12 @@ namespace Producer.EventHubs
     public static class Functions
     {
         [FunctionName(nameof(PostToEventHub))]
-        public static async Task<HttpResponseMessage> PostToEventHub(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestMessage request,
-            [OrchestrationClient]DurableOrchestrationClient client,
+        public static async Task<IActionResult> PostToEventHub(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest request,
+            [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            var inputObject = JObject.Parse(await request.Content.ReadAsStringAsync());
+            var inputObject = JObject.Parse(await request.ReadAsStringAsync());
             var numberOfMessagesPerPartition = inputObject.Value<int>(@"NumberOfMessagesPerPartition");
             var numberOfPartitions = Convert.ToInt32(Environment.GetEnvironmentVariable("EventHubPartitions"));
 
@@ -55,7 +57,7 @@ namespace Producer.EventHubs
 
         [FunctionName(nameof(GenerateMessagesForEventHub))]
         public static async Task<JObject> GenerateMessagesForEventHub(
-            [OrchestrationTrigger]DurableOrchestrationContext ctx,
+            [OrchestrationTrigger] IDurableOrchestrationContext ctx,
             ILogger log)
         {
             var req = ctx.GetInput<MessagesCreateRequest>();
@@ -63,7 +65,7 @@ namespace Producer.EventHubs
             var messages = Enumerable.Range(1, req.NumberOfMessagesPerPartition)
                     .Select(m =>
                     {
-                        var enqueueTime = DateTime.UtcNow;
+                        var enqueueTime = ctx.CurrentUtcDateTime;
                         return new MessagesSendRequest
                         {
                             MessageId = m,
@@ -82,22 +84,20 @@ namespace Producer.EventHubs
             catch (Exception ex)
             {
                 log.LogError(ex, @"An error occurred queuing message generation to Event Hub");
-                return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex.ToString()}" });
+                return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex}" });
             }
         }
 
         private const int MAX_RETRY_ATTEMPTS = 10;
         private static readonly Lazy<string> _messageContent = new Lazy<string>(() =>
         {
-            using (var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt")))
-            {
-                return sr.ReadToEnd();
-            }
+            using var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt"));
+            return sr.ReadToEnd();
         });
 
         [FunctionName(nameof(PostMessagesToEventHub))]
-        public static async Task<bool> PostMessagesToEventHub([ActivityTrigger]DurableActivityContext ctx,
-            [EventHub("%EventHubName%", Connection = @"EventHubConnection")]IAsyncCollector<EventData> queueMessages,
+        public static async Task<bool> PostMessagesToEventHub([ActivityTrigger] IDurableActivityContext ctx,
+            [EventHub("%EventHubName%", Connection = @"EventHubConnection")] IAsyncCollector<EventData> queueMessages,
             ILogger log)
         {
             var messages = ctx.GetInput<IEnumerable<MessagesSendRequest>>();

@@ -52,7 +52,7 @@ namespace Consumer.StorageQueues
             await collector.AddAsync(collectorItem.ToString());
 
             jsonMessage.Add(@"_elapsedTimeMs", elapsedTimeMs);
-            log.LogTrace($@"[{jsonContent.Value<string>(@"TestRunId")}]: Message received at {timestamp}: {jsonMessage.ToString()}");
+            log.LogTrace($@"[{jsonContent.Value<string>(@"TestRunId")}]: Message received at {timestamp}: {jsonMessage}");
 
             log.LogMetric("messageProcessTimeMs",
                 elapsedTimeMs,

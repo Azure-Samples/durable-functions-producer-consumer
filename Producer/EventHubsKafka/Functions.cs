@@ -2,28 +2,29 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
-using System.Configuration;
+using Confluent.Kafka;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
-using Confluent.Kafka;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace Producer.EventHubsKafka
 {
     public static class Functions
     {
         [FunctionName(nameof(PostToEventHubKafka))]
-        public static async Task<HttpResponseMessage> PostToEventHubKafka(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestMessage request,
-            [OrchestrationClient]DurableOrchestrationClient client,
+        public static async Task<IActionResult> PostToEventHubKafka(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest request,
+            [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            var inputObject = JObject.Parse(await request.Content.ReadAsStringAsync());
+            var inputObject = JObject.Parse(await request.ReadAsStringAsync());
             var numberOfMessagesPerPartition = inputObject.Value<int>(@"NumberOfMessagesPerPartition");
             var numberOfPartitions = Convert.ToInt32(Environment.GetEnvironmentVariable("EventHubKafkaPartitions"));
 
@@ -55,7 +56,7 @@ namespace Producer.EventHubsKafka
 
         [FunctionName(nameof(GenerateMessagesForEventHubKafka))]
         public static async Task<JObject> GenerateMessagesForEventHubKafka(
-            [OrchestrationTrigger]DurableOrchestrationContext ctx,
+            [OrchestrationTrigger] IDurableOrchestrationContext ctx,
             ILogger log)
         {
             var req = ctx.GetInput<MessagesCreateRequest>();
@@ -63,7 +64,7 @@ namespace Producer.EventHubsKafka
             var messages = Enumerable.Range(1, req.NumberOfMessagesPerPartition)
                     .Select(m =>
                     {
-                        var enqueueTime = DateTime.UtcNow;
+                        var enqueueTime = ctx.CurrentUtcDateTime;
                         return new MessagesSendRequest
                         {
                             MessageId = m,
@@ -82,21 +83,19 @@ namespace Producer.EventHubsKafka
             catch (Exception ex)
             {
                 log.LogError(ex, @"An error occurred queuing message generation to Event Hub");
-                return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex.ToString()}" });
+                return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex}" });
             }
         }
 
         private const int MAX_RETRY_ATTEMPTS = 10;
         private static readonly Lazy<string> _messageContent = new Lazy<string>(() =>
         {
-            using (var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt")))
-            {
-                return sr.ReadToEnd();
-            }
+            using var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt"));
+            return sr.ReadToEnd();
         });
 
         [FunctionName(nameof(PostMessagesToEventHubKafka))]
-        public static async Task<bool> PostMessagesToEventHubKafka([ActivityTrigger]DurableActivityContext ctx,
+        public static async Task<bool> PostMessagesToEventHubKafka([ActivityTrigger] IDurableActivityContext ctx,
             ILogger log)
         {
             string brokerList = Environment.GetEnvironmentVariable("EventHubKafkaFQDN");

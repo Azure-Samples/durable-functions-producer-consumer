@@ -1,11 +1,13 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.EventGrid;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
@@ -16,12 +18,12 @@ namespace Producer.EventGrid
     public class Functions
     {
         [FunctionName(nameof(PostToEventGrid))]
-        public async Task<HttpResponseMessage> PostToEventGrid(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestMessage request,
-            [OrchestrationClient] DurableOrchestrationClient client,
+        public async Task<IActionResult> PostToEventGrid(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest request,
+            [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            var inputObject = JObject.Parse(await request.Content.ReadAsStringAsync());
+            var inputObject = JObject.Parse(await request.ReadAsStringAsync());
             var numberOfMessages = inputObject.Value<int>(@"NumberOfMessages");
 
             var workTime = -1;
@@ -41,7 +43,7 @@ namespace Producer.EventGrid
 
         [FunctionName(nameof(GenerateMessagesForEventGrid))]
         public async Task<JObject> GenerateMessagesForEventGrid(
-            [OrchestrationTrigger] DurableOrchestrationContext ctx,
+            [OrchestrationTrigger] IDurableOrchestrationContext ctx,
             ILogger log)
         {
             var req = ctx.GetInput<(int numOfMessages, string testRunId, int workTime)>();
@@ -56,7 +58,7 @@ namespace Producer.EventGrid
                 catch (Exception ex)
                 {
                     log.LogError(ex, @"An error occurred queuing message generation to Storage Queue");
-                    return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex.ToString()}" });
+                    return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex}" });
                 }
             }
 
@@ -69,14 +71,12 @@ namespace Producer.EventGrid
         private const int MAX_RETRY_ATTEMPTS = 10;
         private static readonly Lazy<string> _messageContent = new Lazy<string>(() =>
         {
-            using (var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt")))
-            {
-                return sr.ReadToEnd();
-            }
+            using var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt"));
+            return sr.ReadToEnd();
         });
 
         [FunctionName(nameof(PostMessageToEventGrid))]
-        public async Task<bool> PostMessageToEventGrid([ActivityTrigger] DurableActivityContext ctx,
+        public async Task<bool> PostMessageToEventGrid([ActivityTrigger] IDurableActivityContext ctx,
             [EventGrid(TopicEndpointUri = "EventGridTopicEndpoint", TopicKeySetting = "EventGridTopicKey")] IAsyncCollector<EventGridEvent> gridMessages,
             ILogger log)
         {

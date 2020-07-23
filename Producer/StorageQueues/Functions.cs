@@ -4,7 +4,10 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -14,12 +17,12 @@ namespace Producer.StorageQueues
     public static class Functions
     {
         [FunctionName(nameof(PostToStorageQueue))]
-        public static async Task<HttpResponseMessage> PostToStorageQueue(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestMessage request,
-            [OrchestrationClient]DurableOrchestrationClient client,
+        public static async Task<IActionResult> PostToStorageQueue(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest request,
+            [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            var inputObject = JObject.Parse(await request.Content.ReadAsStringAsync());
+            var inputObject = JObject.Parse(await request.ReadAsStringAsync());
             var numberOfMessages = inputObject.Value<int>(@"NumberOfMessages");
 
             var workTime = -1;
@@ -30,7 +33,7 @@ namespace Producer.StorageQueues
 
             var testRunId = Guid.NewGuid().ToString();
             var orchId = await client.StartNewAsync(nameof(GenerateMessagesForStorageQueue),
-                    (numberOfMessages, testRunId, workTime));
+                    Tuple.Create(numberOfMessages, testRunId, workTime));
 
             log.LogTrace($@"Kicked off {numberOfMessages} message creation...");
 
@@ -39,7 +42,7 @@ namespace Producer.StorageQueues
 
         [FunctionName(nameof(GenerateMessagesForStorageQueue))]
         public static async Task<JObject> GenerateMessagesForStorageQueue(
-            [OrchestrationTrigger]DurableOrchestrationContext ctx,
+            [OrchestrationTrigger] IDurableOrchestrationContext ctx,
             ILogger log)
         {
             var req = ctx.GetInput<(int numOfMessages, string testRunId, int workTime)>();
@@ -54,7 +57,7 @@ namespace Producer.StorageQueues
                 catch (Exception ex)
                 {
                     log.LogError(ex, @"An error occurred queuing message generation to Storage Queue");
-                    return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex.ToString()}" });
+                    return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex}" });
                 }
             }
 
@@ -66,15 +69,13 @@ namespace Producer.StorageQueues
         private const int MAX_RETRY_ATTEMPTS = 10;
         private static readonly Lazy<string> _messageContent = new Lazy<string>(() =>
         {
-            using (var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt")))
-            {
-                return sr.ReadToEnd();
-            }
+            using var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt"));
+            return sr.ReadToEnd();
         });
 
         [FunctionName(nameof(PostMessageToStorageQueue))]
-        public static async Task<bool> PostMessageToStorageQueue([ActivityTrigger]DurableActivityContext ctx,
-            [Queue("%StorageQueueName%", Connection = @"StorageQueueConnection")]IAsyncCollector<JObject> queueMessages,
+        public static async Task<bool> PostMessageToStorageQueue([ActivityTrigger] IDurableActivityContext ctx,
+            [Queue("%StorageQueueName%", Connection = @"StorageQueueConnection")] IAsyncCollector<JObject> queueMessages,
             ILogger log)
         {
             var msgDetails = ctx.GetInput<(int id, string runId, int workTime)>();

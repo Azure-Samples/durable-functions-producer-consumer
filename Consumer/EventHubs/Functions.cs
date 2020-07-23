@@ -56,7 +56,7 @@ namespace Consumer.EventHubs
 
                 jsonMessage.Add(@"_elapsedTimeMs", elapsedTimeMs);
 
-                log.LogTrace($@"[{ehMessage.Properties[@"TestRunId"]}]: Message received at {timestamp}: {jsonMessage.ToString()}");
+                log.LogTrace($@"[{ehMessage.Properties[@"TestRunId"]}]: Message received at {timestamp}: {jsonMessage}");
 
                 log.LogMetric("messageProcessTimeMs",
                     elapsedTimeMs,
