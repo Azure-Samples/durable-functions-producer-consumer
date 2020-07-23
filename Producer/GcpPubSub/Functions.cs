@@ -1,12 +1,14 @@
 using System;
 using System.IO;
 using System.Linq;
-using System.Net.Http;
 using System.Reflection;
 using System.Threading.Tasks;
 using Google.Cloud.PubSub.V1;
 using Google.Protobuf;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Extensions.DurableTask;
 using Microsoft.Azure.WebJobs.Extensions.Http;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -18,12 +20,12 @@ namespace Producer.GcpPubSub
         private static PublisherClient _pubSubClient;
 
         [FunctionName(nameof(PostToPubSub))]
-        public static async Task<HttpResponseMessage> PostToPubSub(
-            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequestMessage request,
-            [OrchestrationClient]DurableOrchestrationClient client,
+        public static async Task<IActionResult> PostToPubSub(
+            [HttpTrigger(AuthorizationLevel.Function, "post")] HttpRequest request,
+            [DurableClient] IDurableOrchestrationClient client,
             ILogger log)
         {
-            var inputObject = JObject.Parse(await request.Content.ReadAsStringAsync());
+            var inputObject = JObject.Parse(await request.ReadAsStringAsync());
             var numberOfMessages = inputObject.Value<int>(@"NumberOfMessages");
 
             var workTime = -1;
@@ -39,7 +41,7 @@ namespace Producer.GcpPubSub
 
             var testRunId = Guid.NewGuid().ToString();
             var orchId = await client.StartNewAsync(nameof(GenerateMessagesForPubSub),
-                    (numberOfMessages, testRunId, workTime));
+                    Tuple.Create(numberOfMessages, testRunId, workTime));
 
             log.LogTrace($@"Kicked off {numberOfMessages} message creation...");
 
@@ -48,7 +50,7 @@ namespace Producer.GcpPubSub
 
         [FunctionName(nameof(GenerateMessagesForPubSub))]
         public static async Task<JObject> GenerateMessagesForPubSub(
-            [OrchestrationTrigger]DurableOrchestrationContext ctx,
+            [OrchestrationTrigger] IDurableOrchestrationContext ctx,
             ILogger log)
         {
             var req = ctx.GetInput<(int numOfMessages, string testRunId, int workTime)>();
@@ -63,7 +65,7 @@ namespace Producer.GcpPubSub
                 catch (Exception ex)
                 {
                     log.LogError(ex, @"An error occurred queuing message generation to PubSub");
-                    return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex.ToString()}" });
+                    return JObject.FromObject(new { Error = $@"An error occurred executing orchestration {ctx.InstanceId}: {ex}" });
                 }
             }
 
@@ -75,14 +77,12 @@ namespace Producer.GcpPubSub
         private const int MAX_RETRY_ATTEMPTS = 10;
         private static readonly Lazy<string> _messageContent = new Lazy<string>(() =>
         {
-            using (var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt")))
-            {
-                return sr.ReadToEnd();
-            }
+            using var sr = new StreamReader(Assembly.GetExecutingAssembly().GetManifestResourceStream($@"Producer.messagecontent.txt"));
+            return sr.ReadToEnd();
         });
 
         [FunctionName(nameof(PostMessageToPubSub))]
-        public static async Task<bool> PostMessageToPubSub([ActivityTrigger]DurableActivityContext ctx,
+        public static async Task<bool> PostMessageToPubSub([ActivityTrigger] IDurableActivityContext ctx,
             ILogger log)
         {
             var msgDetails = ctx.GetInput<(int id, string runId, int workTime)>();

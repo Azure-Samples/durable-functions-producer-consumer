@@ -11,6 +11,9 @@
     <None Remove="messagecontent.txt" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="GcpPubSub\Functions.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="GcpPubSub\authfile\gcpPubSubCreds.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
