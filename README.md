@@ -67,7 +67,6 @@ Will post two messages per partition of the Event Hub specified by the `EventHub
 The number of messages per partition will differ by no more than 1. Which means that at any given point of time, if the number of messages expected to be sent per partition is say `x`, then you can expect that there may be some partitions with number of messages `x+1` and some with number of messages `x-1`.
 The Event Hubs Kafka sample just has producer at this point. You can observe the messages coming in using Azure Monitor from the portal.
 
-
 ## Storage Queues
 
 ```http
@@ -93,8 +92,8 @@ cache-control: no-cache
     "NumberOfMessages": 2
 }
 ```
-Will post two messages to the Event Grid Topic specified by the `EventGridTopicEndpoint` and `EventGridTopicKey` settings in your `local.settings.json` file or - when published to Azure - the Function App's application settings.
 
+Will post two messages to the Event Grid Topic specified by the `EventGridTopicEndpoint` and `EventGridTopicKey` settings in your `local.settings.json` file or - when published to Azure - the Function App's application settings.
 
 ## Implementation
 
@@ -111,6 +110,7 @@ The content for each message is **not** dynamic at this time. It is simply store
 This project comes out of a customer engagement whereby we wanted to see how long it would take messages loaded in to a Service Bus queue across thousands of sessions to be processed in FIFO order per session.
 
 ### Deploy to Azure
+
 You can deploy the solution in this repo directly to Azure by simply executing `deploy.ps1` from PowerShell. You'll need to have [Azure PowerShell installed](https://docs.microsoft.com/en-us/powershell/azure/install-az-ps?view=azps-2.4.0#install-the-azure-powershell-module-1) and your Azure Subscription ID handy. Upon completion, your subscription will have a new Resource Group (you'll name this when you execute `deploy.ps1`) with:
 
 * Service Bus **Standard** namespace with a `sample` queue
@@ -138,14 +138,14 @@ Upon successful deployment you'll be given the HTTP POST URLs for each of the Pr
 
 Then, head to your Data Explorer (the window you ran queries within during deployment) and execute the following query to see the results of your run:
 
-```
+```kusto
 SampleDataTable
 ```
 
 > Note: It can take up to 5 minutes for data to be ingested & show up in Azure Data Explorer
 
 to retrieve all of the rows in the ingestion table. You should then see something like this:
-![](doc-img/all-sampledata.png)
+![Sample output from above KQL query](doc-img/all-sampledata.png)
 
 You can use the content of `Properties` to get more detailed data. Try this query:
 
