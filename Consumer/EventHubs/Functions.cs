@@ -13,9 +13,9 @@ namespace Consumer.EventHubs
         private static readonly string _instanceId = Guid.NewGuid().ToString();
 
         [FunctionName(nameof(EventHubProcessorAsync))]
-        public static async System.Threading.Tasks.Task EventHubProcessorAsync(
+        public static async Task EventHubProcessorAsync(
             [EventHubTrigger(@"%EventHubName%", Connection = @"EventHubConnection")] EventData[] ehMessages,
-            [EventHub(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")]IAsyncCollector<string> collector,
+            [EventHub(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")] IAsyncCollector<string> collector,
             ILogger log)
         {
             foreach (var ehMessage in ehMessages)
@@ -32,10 +32,12 @@ namespace Consumer.EventHubs
                     await Task.Delay((int)value);
                 }
 
+                ehMessage.Properties.TryGetValue(@"TestRunId", out var testRunId);
+
                 var collectorItem = new CollectorMessage
                 {
                     MessageProcessedTime = DateTime.UtcNow,
-                    TestRun = ehMessage.Properties[@"TestRunId"].ToString(),
+                    TestRun = testRunId?.ToString(),
                     Trigger = @"EventHub",
                     Properties = new Dictionary<string, object>
                     {
