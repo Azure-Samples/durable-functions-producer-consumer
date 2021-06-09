@@ -304,10 +304,6 @@
         "siteConfig": {
           "appSettings": [
             {
-              "name": "AzureWebJobsDashboard",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('StorageAccountName'), ';AccountKey=', listKeys(parameters('StorageAccountName'),'2019-04-01').keys[0].value)]"
-            },
-            {
               "name": "AzureWebJobsStorage",
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('StorageAccountName'), ';AccountKey=', listKeys(parameters('StorageAccountName'),'2019-04-01').keys[0].value)]"
             },
@@ -333,7 +329,7 @@
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
-              "value": "~2"
+              "value": "~3"
             },
             {
               "name": "ServiceBusConnection",
@@ -379,7 +375,7 @@
           ],
           "properties": {
             "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer",
-            "branch": "master",
+            "branch": "main",
             "isManualIntegration": true,
             "isMercurial": false
           }
@@ -412,10 +408,6 @@
         "httpsOnly": true,
         "siteConfig": {
           "appSettings": [
-            {
-              "name": "AzureWebJobsDashboard",
-              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('StorageAccountName'), ';AccountKey=', listKeys(parameters('StorageAccountName'),'2019-04-01').keys[0].value)]"
-            },
             {
               "name": "AzureWebJobsStorage",
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('StorageAccountName'), ';AccountKey=', listKeys(parameters('StorageAccountName'),'2019-04-01').keys[0].value)]"
@@ -458,7 +450,7 @@
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
-              "value": "~2"
+              "value": "~3"
             },
             {
               "name": "ServiceBusConnection",
@@ -504,7 +496,7 @@
           ],
           "properties": {
             "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer",
-            "branch": "master",
+            "branch": "main",
             "isManualIntegration": true,
             "isMercurial": false
           }
