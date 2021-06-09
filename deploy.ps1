@@ -79,6 +79,7 @@ $eventHubProducerUrl = $initialDeployResult.Outputs.Item("eventHubProducer").Val
 $eventHubKafkaProducerUrl = $initialDeployResult.Outputs.Item("eventHubKafkaProducer").Value
 $serviceBusProducer = $initialDeployResult.Outputs.Item("serviceBusProducer").Value
 $storageQueueProducer = $initialDeployResult.Outputs.Item("storageQueueProducer").Value
+$eventGridProducer = $initialDeployResult.Outputs.Item("eventGridProducer").Value
 $storageAccount = $initialDeployResult.Outputs.Item("storageAccountName").Value
 
 # Storage queues aren't able to be created by ARM templates (yet) - create via AzPosh
@@ -111,4 +112,4 @@ Write-Host "Setting up data ingestion from Event Hub -> Data Explorer..."
 New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile "azuredeploy.dexdataconnection.json" -Name $dexDeploymentName >$null
 
 Write-Host "Done!" -ForegroundColor Green
-Write-Host "Your Producer URLs are as follows:`nEvent Hubs: $($eventHubProducerUrl)`nEvent Hubs Kafka: $($eventHubKafkaProducerUrl)`nService Bus: $($serviceBusProducer)`nStorage Queue: $($storageQueueProducer)`n`nView the readme for their associated payloads."
+Write-Host "Your Producer URLs are as follows:`nEvent Hubs: $($eventHubProducerUrl)`nEvent Hubs Kafka: $($eventHubKafkaProducerUrl)`nService Bus: $($serviceBusProducer)`nStorage Queue: $($storageQueueProducer)`nEvent Grid: $($eventGridProducer)`n`nView the readme for their associated payloads."

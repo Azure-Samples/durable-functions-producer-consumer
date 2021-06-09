@@ -528,6 +528,10 @@
       "type": "string",
       "value": "[concat('https://', parameters('ProducerFunctionAppName'), '.azurewebsites.net/api/PostToStorageQueue?code=', listkeys(concat(variables('producerFunctionId'), '/host/default/'),'2016-08-01').functionKeys.default)]"
     },
+    "eventGridProducer": {
+      "type": "string",
+      "value": "[concat('https://', parameters('ProducerFunctionAppName'), '.azurewebsites.net/api/PostToEventGrid?code=', listkeys(concat(variables('producerFunctionId'), '/host/default/'),'2016-08-01').functionKeys.default)]"
+    },
     "storageAccountName": {
       "type": "string",
       "value": "[parameters('StorageAccountName')]"
