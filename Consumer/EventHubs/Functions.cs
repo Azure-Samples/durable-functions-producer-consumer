@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Azure.EventHubs;
+using Microsoft.Azure.EventHubs.Processor;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
@@ -15,6 +16,7 @@ namespace Consumer.EventHubs
         [FunctionName(nameof(EventHubProcessorAsync))]
         public static async Task EventHubProcessorAsync(
             [EventHubTrigger(@"%EventHubName%", Connection = @"EventHubConnection")] EventData[] ehMessages,
+            PartitionContext partitionContext,
             [EventHub(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")] IAsyncCollector<string> collector,
             ILogger log)
         {
@@ -58,12 +60,12 @@ namespace Consumer.EventHubs
 
                 jsonMessage.Add(@"_elapsedTimeMs", elapsedTimeMs);
 
-                log.LogTrace($@"[{ehMessage.Properties[@"TestRunId"]}]: Message received at {timestamp}: {jsonMessage}");
+                log.LogTrace($@"[{testRunId?.ToString() ?? "null"}]: Message received at {timestamp}: {jsonMessage}");
 
                 log.LogMetric("messageProcessTimeMs",
                     elapsedTimeMs,
                     new Dictionary<string, object> {
-                        { @"PartitionId", ehMessage.Properties[@"PartitionId"] },
+                        { @"PartitionId", partitionContext.PartitionId },
                         { @"MessageId", ehMessage.Properties[@"MessageId"] },
                         { @"SystemEnqueuedTime", enqueuedTime },
                         { @"ClientEnqueuedTime", enqueuedTime },
