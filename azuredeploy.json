@@ -110,7 +110,7 @@
         "capacity": 13
       },
       "properties": {
-        "isAutoInflateEnabled": false,
+        "isAutoInflateEnabled": true,
         "maximumThroughputUnits": 20,
         "kafkaEnabled": true
       }
