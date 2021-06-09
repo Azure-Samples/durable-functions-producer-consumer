@@ -1,5 +1,5 @@
 {
-  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "$schema": "https://schema.management.azure.com/schemas/2019-08-01/deploymentTemplate.json#",
   "contentVersion": "1.0.0.0",
   "parameters": {
     "DataExplorerClusterName": {
@@ -18,18 +18,16 @@
   "resources": [
     {
       "type": "Microsoft.Kusto/clusters/databases/dataconnections",
-      "apiVersion": "2019-01-21",
+      "apiVersion": "2019-11-09",
       "name": "[concat(parameters('DataExplorerClusterName'), '/sampledata/collector')]",
       "location": "[resourceGroup().location]",
+      "kind": "EventHub",
       "properties": {
-        "kind": "EventHub",
-        "properties": {
-          "eventHubResourceId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('EventHubNamespaceName'), 'collector')]",
-          "consumerGroup": "$Default",
-          "tableName": "SampleDataTable",
-          "mappingRuleName": "DataMapping",
-          "dataFormat": "JSON"
-        }
+        "eventHubResourceId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('EventHubNamespaceName'), 'collector')]",
+        "consumerGroup": "$Default",
+        "tableName": "SampleDataTable",
+        "mappingRuleName": "DataMapping",
+        "dataFormat": "JSON"
       }
     }
   ]
