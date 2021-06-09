@@ -21,13 +21,15 @@
       "apiVersion": "2019-01-21",
       "name": "[concat(parameters('DataExplorerClusterName'), '/sampledata/collector')]",
       "location": "[resourceGroup().location]",
-      "kind": "EventHub",
       "properties": {
-        "eventHubResourceId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('EventHubNamespaceName'), 'collector')]",
-        "consumerGroup": "$Default",
-        "tableName": "SampleDataTable",
-        "mappingRuleName": "DataMapping",
-        "dataFormat": "JSON"
+        "kind": "EventHub",
+        "properties": {
+          "eventHubResourceId": "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('EventHubNamespaceName'), 'collector')]",
+          "consumerGroup": "$Default",
+          "tableName": "SampleDataTable",
+          "mappingRuleName": "DataMapping",
+          "dataFormat": "JSON"
+        }
       }
     }
   ]

@@ -172,6 +172,7 @@
         "name": "Standard",
         "tier": "Standard"
       },
+      "properties": {},
       "tags": {
         "sample": "[variables('sampleName')]"
       }
@@ -294,7 +295,6 @@
         "enabled": true,
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('FunctionPlanName'))]",
         "reserved": false,
-        "scmSiteAlsoStopped": false,
         "clientAffinityEnabled": false,
         "clientCertEnabled": false,
         "hostNamesDisabled": false,
@@ -399,7 +399,6 @@
         "enabled": true,
         "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('FunctionPlanName'))]",
         "reserved": false,
-        "scmSiteAlsoStopped": false,
         "clientAffinityEnabled": false,
         "clientCertEnabled": false,
         "hostNamesDisabled": false,
