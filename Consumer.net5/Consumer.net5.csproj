@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net5.0</TargetFramework>
+		<AzureFunctionsVersion>v3</AzureFunctionsVersion>
+		<OutputType>Exe</OutputType>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Include="..\Consumer\CollectorMessage.cs" Link="CollectorMessage.cs" />
+		<Compile Include="..\Consumer\EventGrid\Functions.cs" Link="EventGrid\Functions.cs" />
+		<Compile Include="..\Consumer\EventHubs\Functions.cs" Link="EventHubs\Functions.cs" />
+		<Compile Include="..\Consumer\ServiceBus\Functions.cs" Link="ServiceBus\Functions.cs" />
+		<Compile Include="..\Consumer\StorageQueues\Functions.cs" Link="StorageQueues\Functions.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.0.3" OutputItemType="Analyzer" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.1.0" />
+		<PackageReference Include="Microsoft.Azure.WebJobs.Core" Version="3.0.27" />
+		<PackageReference Include="Microsoft.Azure.WebJobs.Extensions" Version="4.0.1" />
+		<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventGrid" Version="2.1.0" />
+		<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.EventHubs" Version="4.2.0" />
+		<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.ServiceBus" Version="4.3.0" />
+		<PackageReference Include="Microsoft.Azure.WebJobs.Extensions.Storage" Version="4.0.4" />
+	</ItemGroup>
+	<ItemGroup>
+		<Content Include="..\Consumer\host.json" Link="host.json" />
+		<Content Include="..\Consumer\local.settings.json" Link="local.settings.json" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="host.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+</Project>
