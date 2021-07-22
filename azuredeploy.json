@@ -478,7 +478,7 @@
             },
             {
               "name": "WEBSITE_CONTENTSHARE",
-              "value": "[toLower(parameters('ConsumerFunctionAppName'))]"
+              "value": "[toLower(concat(parameters('ConsumerFunctionAppName'), '5'))]"
             },
             {
               "name": "PROJECT",
