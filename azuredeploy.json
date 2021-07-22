@@ -98,15 +98,21 @@
       "resources": [
         {
           "name": "net3",
-          "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
-          "apiVersion": "2021-01-01-preview",
-          "properties": {}
+          "type": "ConsumerGroups",
+          "apiVersion": "2015-08-01",
+          "properties": {},
+          "dependsOn": [
+            "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('EventHubNamespaceName'), 'sample')]"
+          ]
         },
         {
           "name": "net5",
-          "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
-          "apiVersion": "2021-01-01-preview",
-          "properties": {}
+          "type": "ConsumerGroups",
+          "apiVersion": "2015-08-01",
+          "properties": {},
+          "dependsOn": [
+            "[resourceId('Microsoft.EventHub/namespaces/eventhubs', parameters('EventHubNamespaceName'), 'sample')]"
+          ]
         }
       ]
     },
