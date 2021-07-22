@@ -5,7 +5,7 @@ using Newtonsoft.Json.Linq;
 
 namespace Consumer
 {
-    internal class CollectorMessage
+    public class CollectorMessage
     {
         public DateTime MessageProcessedTime { get; set; }
         public string CloudProvider { get; } = @"Azure";

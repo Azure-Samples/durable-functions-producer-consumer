@@ -4,8 +4,13 @@
 		<AzureFunctionsVersion>v3</AzureFunctionsVersion>
 		<OutputType>Exe</OutputType>
 	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <DefineConstants>TRACE;NET5</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	  <DefineConstants>NET5</DefineConstants>
+	</PropertyGroup>
 	<ItemGroup>
-		<Compile Include="..\Consumer\CollectorMessage.cs" Link="CollectorMessage.cs" />
 		<Compile Include="..\Consumer\EventGrid\Functions.cs" Link="EventGrid\Functions.cs" />
 		<Compile Include="..\Consumer\EventHubs\Functions.cs" Link="EventHubs\Functions.cs" />
 		<Compile Include="..\Consumer\ServiceBus\Functions.cs" Link="ServiceBus\Functions.cs" />
@@ -24,6 +29,9 @@
 	<ItemGroup>
 		<Content Include="..\Consumer\host.json" Link="host.json" />
 		<Content Include="..\Consumer\local.settings.json" Link="local.settings.json" />
+	</ItemGroup>
+	<ItemGroup>
+	  <ProjectReference Include="..\ConsumerCode\ConsumerCode.csproj" />
 	</ItemGroup>
 	<ItemGroup>
 		<None Update="host.json">
