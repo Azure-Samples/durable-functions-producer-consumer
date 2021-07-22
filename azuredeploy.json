@@ -94,7 +94,21 @@
       },
       "tags": {
         "sample": "[variables('sampleName')]"
-      }
+      },
+      "resources": [
+        {
+          "name": "net3",
+          "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+          "apiVersion": "2021-01-01-preview",
+          "properties": {}
+        },
+        {
+          "name": "net5",
+          "type": "Microsoft.EventHub/namespaces/eventhubs/consumergroups",
+          "apiVersion": "2021-01-01-preview",
+          "properties": {}
+        }
+      ]
     },
     {
       "name": "[parameters('EventHubKafkaNamespaceName')]",
@@ -324,6 +338,10 @@
               "value": "sample"
             },
             {
+              "name": "EventHubConsumerGroupName",
+              "value": "net3"
+            },
+            {
               "name": "FUNCTIONS_EXTENSION_RUNTIME",
               "value": "dotnet"
             },
@@ -425,6 +443,10 @@
             {
               "name": "EventHubName",
               "value": "sample"
+            },
+            {
+              "name": "EventHubConsumerGroupName",
+              "value": "net5"
             },
             {
               "name": "FUNCTIONS_EXTENSION_RUNTIME",
