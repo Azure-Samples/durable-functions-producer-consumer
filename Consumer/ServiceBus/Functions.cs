@@ -65,10 +65,9 @@ namespace Consumer.ServiceBus
         [FunctionName(nameof(ClearDeadLetterServiceBusQueue))]
 #pragma warning disable IDE0060 // Remove unused parameter
         public static void ClearDeadLetterServiceBusQueue([TimerTrigger("* 0 * * 1", RunOnStartup = true)] TimerInfo myTimer,
+#pragma warning restore IDE0060 // Remove unused parameter
             ILogger log)
         {
-#pragma warning restore IDE0060 // Remove unused parameter
-
             var deadLetterQueueName = $@"{Environment.GetEnvironmentVariable("ServiceBusQueueName")}/$DeadLetterQueue";
             var client = new QueueClient(Environment.GetEnvironmentVariable(@"ServiceBusConnection"),
                     deadLetterQueueName, ReceiveMode.PeekLock);
