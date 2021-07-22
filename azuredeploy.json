@@ -385,6 +385,109 @@
     {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2016-08-01",
+      "name": "[concat(parameters('ConsumerFunctionAppName'), '5')]",
+      "location": "[resourceGroup().location]",
+      "dependsOn": [
+        "[resourceId('Microsoft.Web/serverfarms', parameters('FunctionPlanName'))]",
+        "[resourceId('Microsoft.ServiceBus/namespaces', parameters('ServiceBusNamespaceName'))]",
+        "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubNamespaceName'))]",
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+      ],
+      "kind": "functionapp",
+      "properties": {
+        "enabled": true,
+        "serverFarmId": "[resourceId('Microsoft.Web/serverfarms', parameters('FunctionPlanName'))]",
+        "reserved": false,
+        "clientAffinityEnabled": false,
+        "clientCertEnabled": false,
+        "hostNamesDisabled": false,
+        "containerSize": 1536,
+        "dailyMemoryTimeQuota": 0,
+        "httpsOnly": true,
+        "siteConfig": {
+          "appSettings": [
+            {
+              "name": "AzureWebJobsStorage",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('StorageAccountName'), ';AccountKey=', listKeys(parameters('StorageAccountName'),'2019-04-01').keys[0].value)]"
+            },
+            {
+              "name": "CollectorEventHubConnection",
+              "value": "[listkeys(variables('ehAuthRuleResourceId'), '2017-04-01').primaryConnectionString]"
+            },
+            {
+              "name": "CollectorEventHubName",
+              "value": "collector"
+            },
+            {
+              "name": "EventHubConnection",
+              "value": "[listkeys(variables('ehAuthRuleResourceId'), '2017-04-01').primaryConnectionString]"
+            },
+            {
+              "name": "EventHubName",
+              "value": "sample"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_RUNTIME",
+              "value": "dotnet"
+            },
+            {
+              "name": "FUNCTIONS_EXTENSION_VERSION",
+              "value": "~3"
+            },
+            {
+              "name": "ServiceBusConnection",
+              "value": "[listkeys(variables('sbAuthRuleResourceId'), '2017-04-01').primaryConnectionString]"
+            },
+            {
+              "name": "ServiceBusQueueName",
+              "value": "sample"
+            },
+            {
+              "name": "StorageQueueConnection",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('StorageAccountName'), ';AccountKey=', listKeys(parameters('StorageAccountName'),'2019-04-01').keys[0].value)]"
+            },
+            {
+              "name": "StorageQueueName",
+              "value": "sample"
+            },
+            {
+              "name": "WEBSITE_CONTENTAZUREFILECONNECTIONSTRING",
+              "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('StorageAccountName'), ';AccountKey=', listKeys(parameters('StorageAccountName'),'2019-04-01').keys[0].value)]"
+            },
+            {
+              "name": "WEBSITE_CONTENTSHARE",
+              "value": "[toLower(parameters('ConsumerFunctionAppName'))]"
+            },
+            {
+              "name": "PROJECT",
+              "value": "Consumer.net5/"
+            }
+          ]
+        }
+      },
+      "tags": {
+        "sample": "[variables('sampleName')]"
+      },
+      "resources": [
+        {
+          "apiVersion": "2018-02-01",
+          "name": "web",
+          "type": "sourcecontrols",
+          "dependsOn": [
+            "[resourceId('Microsoft.Web/Sites', concat(parameters('ConsumerFunctionAppName'), '5'))]"
+          ],
+          "properties": {
+            "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer",
+            "branch": "net5-consumer",
+            "isManualIntegration": true,
+            "isMercurial": false
+          }
+        }
+      ]
+    },
+    {
+      "type": "Microsoft.Web/sites",
+      "apiVersion": "2016-08-01",
       "name": "[parameters('ProducerFunctionAppName')]",
       "location": "[resourceGroup().location]",
       "dependsOn": [
