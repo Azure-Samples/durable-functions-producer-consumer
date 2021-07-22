@@ -456,7 +456,7 @@
             },
             {
               "name": "FUNCTIONS_EXTENSION_RUNTIME",
-              "value": "dotnet"
+              "value": "dotnet-isolated"
             },
             {
               "name": "FUNCTIONS_EXTENSION_VERSION",
