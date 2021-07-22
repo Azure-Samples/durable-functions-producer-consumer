@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Microsoft.Azure.EventHubs;
-using Microsoft.Azure.EventHubs.Processor;
-using Microsoft.Azure.WebJobs;
+using Azure.Messaging.EventHubs;
+using Azure.Messaging.EventHubs.Consumer;
+using Consumer.net5.Extensions;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
@@ -13,11 +14,11 @@ namespace Consumer.EventHubs
     {
         private static readonly string _instanceId = Guid.NewGuid().ToString();
 
-        [FunctionName(nameof(EventHubProcessorAsync))]
-        public static async Task EventHubProcessorAsync(
+        [Function(nameof(EventHubProcessorAsync))]
+        [EventHubOutput(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")]
+        public static async Task<string> EventHubProcessorAsync(
             [EventHubTrigger(@"%EventHubName%", Connection = @"EventHubConnection", ConsumerGroup = "%EventHubConsumerGroupName%")] EventData[] ehMessages,
             PartitionContext partitionContext,
-            [EventHub(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")] IAsyncCollector<string> collector,
             ILogger log)
         {
             foreach (var ehMessage in ehMessages)
@@ -42,21 +43,19 @@ namespace Consumer.EventHubs
                     TestRun = testRunId?.ToString(),
                     Trigger = @"EventHub",
                     Properties = new Dictionary<string, object>
-                    {
-                        { @"InstanceId", _instanceId },
-                        { @"ExecutionId", Guid.NewGuid().ToString() },
-                        { @"ElapsedTimeMs", elapsedTimeMs },
-                        { @"ClientEnqueueTimeUtc", enqueuedTime },
-                        { @"MessageId", ehMessage.Properties[@"MessageId"] },
-                        { @"DequeuedTime", timestamp },
-                        { @"Language", @"csharp" },
-                    }
+                        {
+                            { @"InstanceId", _instanceId },
+                            { @"ExecutionId", Guid.NewGuid().ToString() },
+                            { @"ElapsedTimeMs", elapsedTimeMs },
+                            { @"ClientEnqueueTimeUtc", enqueuedTime },
+                            { @"MessageId", ehMessage.Properties[@"MessageId"] },
+                            { @"DequeuedTime", timestamp },
+                            { @"Language", @"csharp" },
+                        }
                 };
 
-                await collector.AddAsync(collectorItem.ToString());
-
                 jsonMessage.Remove(@"Body");
-                jsonMessage.Add(@"Body", $@"{ehMessage.Body.Count} byte(s)");
+                jsonMessage.Add(@"Body", $@"{ehMessage.Body.Length} byte(s)");
 
                 jsonMessage.Add(@"_elapsedTimeMs", elapsedTimeMs);
 
@@ -65,14 +64,18 @@ namespace Consumer.EventHubs
                 log.LogMetric("messageProcessTimeMs",
                     elapsedTimeMs,
                     new Dictionary<string, object> {
-                        { @"PartitionId", partitionContext.PartitionId },
-                        { @"MessageId", ehMessage.Properties[@"MessageId"] },
-                        { @"SystemEnqueuedTime", enqueuedTime },
-                        { @"ClientEnqueuedTime", enqueuedTime },
-                        { @"DequeuedTime", timestamp },
-                        { @"Language", @"csharp" },
+                            { @"PartitionId", partitionContext.PartitionId },
+                            { @"MessageId", ehMessage.Properties[@"MessageId"] },
+                            { @"SystemEnqueuedTime", enqueuedTime },
+                            { @"ClientEnqueuedTime", enqueuedTime },
+                            { @"DequeuedTime", timestamp },
+                            { @"Language", @"csharp" },
                     });
+
+                return collectorItem.ToString();
             }
+
+            return null;
         }
     }
 }

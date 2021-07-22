@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
+using Consumer.net5.Extensions;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Azure.ServiceBus;
-using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
-using Webjobs = Microsoft.Azure.WebJobs;
 
 namespace Consumer.ServiceBus
 {
@@ -14,10 +14,10 @@ namespace Consumer.ServiceBus
     {
         private static readonly string _instanceId = Guid.NewGuid().ToString();
 
-        [FunctionName(nameof(ServiceBusQueueProcessorAsync))]
-        public static async Task ServiceBusQueueProcessorAsync(
+        [Function(nameof(ServiceBusQueueProcessorAsync))]
+        [EventHubOutput(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")]
+        public static async Task<string> ServiceBusQueueProcessorAsync(
             [ServiceBusTrigger(@"%ServiceBusQueueName%", Connection = @"ServiceBusConnection", IsSessionsEnabled = true)] Message sbMessage,
-            [EventHub(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")] IAsyncCollector<string> collector,
             ILogger log)
         {
             var timestamp = DateTime.UtcNow;
@@ -49,8 +49,6 @@ namespace Consumer.ServiceBus
                 }
             };
 
-            await collector.AddAsync(collectorItem.ToString());
-
             log.LogMetric("messageProcessTimeMs",
                 elapsedTimeMs,
                 new Dictionary<string, object> {
@@ -60,9 +58,11 @@ namespace Consumer.ServiceBus
                     { @"DequeuedTime", timestamp },
                     { @"Language", @"csharp" },
                 });
+
+            return collectorItem.ToString();
         }
 
-        [FunctionName(nameof(ClearDeadLetterServiceBusQueue))]
+        [Function(nameof(ClearDeadLetterServiceBusQueue))]
 #pragma warning disable IDE0060 // Remove unused parameter
         public static void ClearDeadLetterServiceBusQueue([TimerTrigger("* 0 * * 1", RunOnStartup = true)] TimerInfo myTimer,
             ILogger log)

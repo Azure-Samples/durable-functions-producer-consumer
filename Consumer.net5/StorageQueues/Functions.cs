@@ -1,22 +1,28 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Consumer;
-using Microsoft.Azure.Storage.Queue;
-using Microsoft.Azure.WebJobs;
+using Azure.Storage.Queues.Models;
+using Consumer.net5.Extensions;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
-namespace ConsumerCode
+namespace Consumer.StorageQueues
 {
-    public static class StorageQueues
+    public static class Functions
     {
-        public static async Task ConsumeAsync(CloudQueueMessage queueMessage, IAsyncCollector<string> collector, ILogger log, string instanceId)
+        private static readonly string _instanceId = Guid.NewGuid().ToString();
+
+        [Function(nameof(StorageQueueProcessorAsync))]
+        [EventHubOutput(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")]
+        public static async Task<string> StorageQueueProcessorAsync(
+            [QueueTrigger(@"%StorageQueueName%", Connection = @"StorageQueueConnection")] QueueMessage queueMessage,
+            ILogger log)
         {
             var timestamp = DateTime.UtcNow;
 
             var jsonMessage = JObject.FromObject(queueMessage);
-            var jsonContent = JObject.Parse(queueMessage.AsString);
+            var jsonContent = JObject.Parse(queueMessage.Body.ToString());
 
             var enqueuedTime = jsonContent.Value<DateTime>(@"EnqueueTimeUtc");
             var elapsedTimeMs = (timestamp - enqueuedTime).TotalMilliseconds;
@@ -33,18 +39,16 @@ namespace ConsumerCode
                 Trigger = @"Queue",
                 Properties = new Dictionary<string, object>
                 {
-                    { @"InstanceId", instanceId },
+                    { @"InstanceId", _instanceId },
                     { @"ExecutionId", Guid.NewGuid().ToString() },
                     { @"ElapsedTimeMs", elapsedTimeMs },
                     { @"ClientEnqueueTimeUtc", enqueuedTime },
-                    { @"SystemEnqueuedTime", queueMessage.InsertionTime },
+                    { @"SystemEnqueuedTime", queueMessage.InsertedOn },
                     { @"MessageId", jsonContent.Value<int>(@"MessageId") },
                     { @"DequeuedTime", timestamp },
                     { @"Language", @"csharp" },
                 }
             };
-
-            await collector.AddAsync(collectorItem.ToString());
 
             jsonMessage.Add(@"_elapsedTimeMs", elapsedTimeMs);
             log.LogTrace($@"[{jsonContent.Value<string>(@"TestRunId")}]: Message received at {timestamp}: {jsonMessage}");
@@ -53,12 +57,13 @@ namespace ConsumerCode
                 elapsedTimeMs,
                 new Dictionary<string, object> {
                         { @"MessageId", jsonContent.Value<int>(@"MessageId") },
-                        { @"SystemEnqueuedTime", queueMessage.InsertionTime},
+                        { @"SystemEnqueuedTime", queueMessage.InsertedOn },
                         { @"ClientEnqueuedTime", enqueuedTime },
                         { @"DequeuedTime", timestamp },
                         { @"Language", @"csharp" },
                 });
-        }
 
+            return collectorItem.ToString();
+        }
     }
 }

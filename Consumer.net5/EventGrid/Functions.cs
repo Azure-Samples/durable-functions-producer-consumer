@@ -1,18 +1,25 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Consumer;
+using Consumer.net5.Extensions;
 using Microsoft.Azure.EventGrid.Models;
-using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 
-namespace ConsumerCode
+namespace Consumer.EventGrid
 {
-    public static class EventGrid
+    public static class Functions
     {
-        public static async Task ConsumeAsync(EventGridEvent gridMessage, IAsyncCollector<string> collector, ILogger log, string instanceId)
+        private static readonly string _instanceId = Guid.NewGuid().ToString();
+
+        [Function(nameof(EventGridProcessorAsync))]
+        [EventHubOutput(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")]
+        public static async Task<string> EventGridProcessorAsync(
+            [EventGridTrigger] EventGridEvent gridMessage,
+            FunctionContext functionContext)
         {
+            var log = functionContext.GetLogger(nameof(EventGridProcessorAsync));
             var timestamp = DateTime.UtcNow;
 
             var jsonMessage = JObject.FromObject(gridMessage);
@@ -33,7 +40,7 @@ namespace ConsumerCode
                 Trigger = @"EventGrid",
                 Properties = new Dictionary<string, object>
                 {
-                    { @"InstanceId", instanceId },
+                    { @"InstanceId", _instanceId },
                     { @"ExecutionId", Guid.NewGuid().ToString() },
                     { @"ElapsedTimeMs", elapsedTimeMs },
                     { @"ClientEnqueueTimeUtc", enqueuedTime },
@@ -42,8 +49,6 @@ namespace ConsumerCode
                     { @"Language", @"csharp" },
                 }
             };
-
-            await collector.AddAsync(collectorItem.ToString());
 
             jsonMessage.Add(@"_elapsedTimeMs", elapsedTimeMs);
             log.LogTrace($@"[{jsonContent.Value<string>(@"TestRunId")}]: Message received at {timestamp}: {jsonMessage}");
@@ -56,6 +61,8 @@ namespace ConsumerCode
                         { @"DequeuedTime", timestamp },
                         { @"Language", @"csharp" },
                 });
+
+            return collectorItem.ToString();
         }
     }
 }
