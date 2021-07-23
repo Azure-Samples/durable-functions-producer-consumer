@@ -1,9 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace Consumer.net5.Extensions
@@ -25,7 +21,7 @@ namespace Consumer.net5.Extensions
             state[LogConstants.MetricValueKey] = value;
 
             IDictionary<string, object> payload = new ReadOnlyDictionary<string, object>(state);
-            logger?.Log(LogLevel.Information, LogConstants.MetricEventId, payload, null, (s, e) => null);
+            logger?.Log(LogLevel.Information, LogConstants.MetricEventId, payload, null, (s, e) => string.Empty);
         }
     }
 

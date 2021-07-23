@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Producer": {
+      "commandName": "Project",
+      "commandLineArgs": "host start -p 7072"
+    }
+  }
+}
