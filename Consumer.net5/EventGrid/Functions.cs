@@ -1,11 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Consumer.net5.Extensions;
-using Microsoft.Azure.EventGrid.Models;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 
 namespace Consumer.EventGrid
 {
@@ -16,53 +12,56 @@ namespace Consumer.EventGrid
         [Function(nameof(EventGridProcessorAsync))]
         [EventHubOutput(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")]
         public static async Task<string> EventGridProcessorAsync(
-            [EventGridTrigger] EventGridEvent gridMessage,
+            [EventGridTrigger] string gridMessage,
             FunctionContext functionContext)
         {
             var log = functionContext.GetLogger(nameof(EventGridProcessorAsync));
-            var timestamp = DateTime.UtcNow;
+            log.LogInformation($@"EventGrid message received: {gridMessage}");
+            //log.LogInformation($@"EventGrid Message received: {JsonSerializer.Serialize(gridMessage)}");
 
-            var jsonMessage = JObject.FromObject(gridMessage);
-            var jsonContent = JObject.FromObject(gridMessage.Data);
+            //var timestamp = DateTime.UtcNow;
 
-            var enqueuedTime = gridMessage.EventTime;
-            var elapsedTimeMs = (timestamp - enqueuedTime).TotalMilliseconds;
+            //var jsonMessage = JObject.FromObject(gridMessage);
+            //var jsonContent = JObject.FromObject(gridMessage.Data);
 
-            if (jsonContent.TryGetValue(@"workTime", out var workTime))
-            {
-                await Task.Delay(workTime.Value<int>());
-            }
+            //var enqueuedTime = gridMessage.EventTime;
+            //var elapsedTimeMs = (timestamp - enqueuedTime).TotalMilliseconds;
 
-            var collectorItem = new CollectorMessage
-            {
-                MessageProcessedTime = DateTime.UtcNow,
-                TestRun = jsonContent.Value<string>(@"TestRunId"),
-                Trigger = @"EventGrid",
-                Properties = new Dictionary<string, object>
-                {
-                    { @"InstanceId", _instanceId },
-                    { @"ExecutionId", Guid.NewGuid().ToString() },
-                    { @"ElapsedTimeMs", elapsedTimeMs },
-                    { @"ClientEnqueueTimeUtc", enqueuedTime },
-                    { @"MessageId", jsonContent.Value<int>(@"MessageId") },
-                    { @"DequeuedTime", timestamp },
-                    { @"Language", @"csharp" },
-                }
-            };
+            //if (jsonContent.TryGetValue(@"workTime", out var workTime))
+            //{
+            //    await Task.Delay(workTime.Value<int>());
+            //}
 
-            jsonMessage.Add(@"_elapsedTimeMs", elapsedTimeMs);
-            log.LogTrace($@"[{jsonContent.Value<string>(@"TestRunId")}]: Message received at {timestamp}: {jsonMessage}");
+            //var collectorItem = new CollectorMessage
+            //{
+            //    MessageProcessedTime = DateTime.UtcNow,
+            //    TestRun = jsonContent.Value<string>(@"TestRunId"),
+            //    Trigger = @"EventGrid",
+            //    Properties = new Dictionary<string, object>
+            //    {
+            //        { @"InstanceId", _instanceId },
+            //        { @"ExecutionId", Guid.NewGuid().ToString() },
+            //        { @"ElapsedTimeMs", elapsedTimeMs },
+            //        { @"ClientEnqueueTimeUtc", enqueuedTime },
+            //        { @"MessageId", jsonContent.Value<int>(@"MessageId") },
+            //        { @"DequeuedTime", timestamp },
+            //        { @"Language", @"csharp" },
+            //    }
+            //};
 
-            log.LogMetric("messageProcessTimeMs",
-                elapsedTimeMs,
-                new Dictionary<string, object> {
-                        { @"MessageId", jsonContent.Value<int>(@"MessageId") },
-                        { @"ClientEnqueuedTime", enqueuedTime },
-                        { @"DequeuedTime", timestamp },
-                        { @"Language", @"csharp" },
-                });
+            //jsonMessage.Add(@"_elapsedTimeMs", elapsedTimeMs);
+            //log.LogTrace($@"[{jsonContent.Value<string>(@"TestRunId")}]: Message received at {timestamp}: {jsonMessage}");
 
-            return collectorItem.ToString();
+            //log.LogMetric("messageProcessTimeMs",
+            //    elapsedTimeMs,
+            //    new Dictionary<string, object> {
+            //            { @"MessageId", jsonContent.Value<int>(@"MessageId") },
+            //            { @"ClientEnqueuedTime", enqueuedTime },
+            //            { @"DequeuedTime", timestamp },
+            //            { @"Language", @"csharp" },
+            //    });
+
+            return null;// collectorItem.ToString();
         }
     }
 }

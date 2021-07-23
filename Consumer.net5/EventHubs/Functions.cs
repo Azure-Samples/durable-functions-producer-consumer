@@ -1,12 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
-using Azure.Messaging.EventHubs;
-using Azure.Messaging.EventHubs.Consumer;
-using Consumer.net5.Extensions;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using Newtonsoft.Json.Linq;
 
 namespace Consumer.EventHubs
 {
@@ -17,62 +12,66 @@ namespace Consumer.EventHubs
         [Function(nameof(EventHubProcessorAsync))]
         [EventHubOutput(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")]
         public static async Task<string> EventHubProcessorAsync(
-            [EventHubTrigger(@"%EventHubName%", Connection = @"EventHubConnection", ConsumerGroup = "%EventHubConsumerGroupName%")] EventData[] ehMessages,
-            PartitionContext partitionContext,
-            ILogger log)
+            [EventHubTrigger(@"%EventHubName%", Connection = @"EventHubConnection", ConsumerGroup = "%EventHubConsumerGroupName%")] string[] ehMessages,
+            //PartitionContext partitionContext,
+            FunctionContext context)
         {
+            var log = context.GetLogger(nameof(EventHubProcessorAsync));
+
             foreach (var ehMessage in ehMessages)
             {
-                // replace 'body' property so output isn't ridiculous
-                var jsonMessage = JObject.FromObject(ehMessage);
+                log.LogInformation($@"EventHub Message received: {ehMessage}");
 
-                var timestamp = DateTime.UtcNow;
-                var enqueuedTime = (DateTime)ehMessage.Properties[@"EnqueueTimeUtc"];
-                var elapsedTimeMs = (timestamp - enqueuedTime).TotalMilliseconds;
+                //// replace 'body' property so output isn't ridiculous
+                //var jsonMessage = JObject.FromObject(ehMessage);
 
-                if (ehMessage.Properties.TryGetValue(@"workTime", out var value))
-                {
-                    await Task.Delay((int)value);
-                }
+                //var timestamp = DateTime.UtcNow;
+                //var enqueuedTime = (DateTime)ehMessage.Properties[@"EnqueueTimeUtc"];
+                //var elapsedTimeMs = (timestamp - enqueuedTime).TotalMilliseconds;
 
-                ehMessage.Properties.TryGetValue(@"TestRunId", out var testRunId);
+                //if (ehMessage.Properties.TryGetValue(@"workTime", out var value))
+                //{
+                //    await Task.Delay((int)value);
+                //}
 
-                var collectorItem = new CollectorMessage
-                {
-                    MessageProcessedTime = DateTime.UtcNow,
-                    TestRun = testRunId?.ToString(),
-                    Trigger = @"EventHub",
-                    Properties = new Dictionary<string, object>
-                        {
-                            { @"InstanceId", _instanceId },
-                            { @"ExecutionId", Guid.NewGuid().ToString() },
-                            { @"ElapsedTimeMs", elapsedTimeMs },
-                            { @"ClientEnqueueTimeUtc", enqueuedTime },
-                            { @"MessageId", ehMessage.Properties[@"MessageId"] },
-                            { @"DequeuedTime", timestamp },
-                            { @"Language", @"csharp" },
-                        }
-                };
+                //ehMessage.Properties.TryGetValue(@"TestRunId", out var testRunId);
 
-                jsonMessage.Remove(@"Body");
-                jsonMessage.Add(@"Body", $@"{ehMessage.Body.Length} byte(s)");
+                //var collectorItem = new CollectorMessage
+                //{
+                //    MessageProcessedTime = DateTime.UtcNow,
+                //    TestRun = testRunId?.ToString(),
+                //    Trigger = @"EventHub",
+                //    Properties = new Dictionary<string, object>
+                //        {
+                //            { @"InstanceId", _instanceId },
+                //            { @"ExecutionId", Guid.NewGuid().ToString() },
+                //            { @"ElapsedTimeMs", elapsedTimeMs },
+                //            { @"ClientEnqueueTimeUtc", enqueuedTime },
+                //            { @"MessageId", ehMessage.Properties[@"MessageId"] },
+                //            { @"DequeuedTime", timestamp },
+                //            { @"Language", @"csharp" },
+                //        }
+                //};
 
-                jsonMessage.Add(@"_elapsedTimeMs", elapsedTimeMs);
+                //jsonMessage.Remove(@"Body");
+                //jsonMessage.Add(@"Body", $@"{ehMessage.Body.Length} byte(s)");
 
-                log.LogTrace($@"[{testRunId?.ToString() ?? "null"}]: Message received at {timestamp}: {jsonMessage}");
+                //jsonMessage.Add(@"_elapsedTimeMs", elapsedTimeMs);
 
-                log.LogMetric("messageProcessTimeMs",
-                    elapsedTimeMs,
-                    new Dictionary<string, object> {
-                            { @"PartitionId", partitionContext.PartitionId },
-                            { @"MessageId", ehMessage.Properties[@"MessageId"] },
-                            { @"SystemEnqueuedTime", enqueuedTime },
-                            { @"ClientEnqueuedTime", enqueuedTime },
-                            { @"DequeuedTime", timestamp },
-                            { @"Language", @"csharp" },
-                    });
+                //log.LogTrace($@"[{testRunId?.ToString() ?? "null"}]: Message received at {timestamp}: {jsonMessage}");
 
-                return collectorItem.ToString();
+                //log.LogMetric("messageProcessTimeMs",
+                //    elapsedTimeMs,
+                //    new Dictionary<string, object> {
+                //            { @"PartitionId", partitionContext.PartitionId },
+                //            { @"MessageId", ehMessage.Properties[@"MessageId"] },
+                //            { @"SystemEnqueuedTime", enqueuedTime },
+                //            { @"ClientEnqueuedTime", enqueuedTime },
+                //            { @"DequeuedTime", timestamp },
+                //            { @"Language", @"csharp" },
+                //    });
+
+                //return collectorItem.ToString();
             }
 
             return null;
