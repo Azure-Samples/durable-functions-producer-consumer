@@ -28,9 +28,6 @@ namespace Consumer.EventGrid
             [EventGridTrigger] string rawGridMessage,
             FunctionContext functionContext)
         {
-#if DEBUG
-            System.Diagnostics.Debugger.Launch();
-#endif
             var log = functionContext.GetLogger(nameof(EventGridProcessorAsync));
 
             log.LogInformation($@"EventGrid message received: {rawGridMessage}");
