@@ -9,6 +9,14 @@
     "EventHubNamespaceName": {
       "defaultValue": "[concat('eh', uniqueString(subscription().id, resourceGroup().id))]",
       "type": "string"
+    },
+    "ConsumerFunctionAppName": {
+      "defaultValue": "[concat('consumer', uniqueString(subscription().id, resourceGroup().id))]",
+      "type": "string"
+    },
+    "EventGridTopicName": {
+      "defaultValue": "[concat('egt', uniqueString(subscription().id, resourceGroup().id))]",
+      "type": "string"
     }
   },
   "variables": {
@@ -28,6 +36,36 @@
         "tableName": "SampleDataTable",
         "mappingRuleName": "DataMapping",
         "dataFormat": "JSON"
+      }
+    },
+    {
+      "type": "Microsoft.EventGrid/eventSubscriptions",
+      "scope": "[resourceId('Microsoft.EventGrid/topics', parameters('EventGridTopicName'))]",
+      "apiVersion": "2020-06-01",
+      "name": "[parameters('ConsumerFunctionAppName')]",
+      "properties": {
+        "destination": {
+          "endpointType": "AzureFunction",
+          "properties": {
+            "resourceId": "[resourceId('Microsoft.Web/Sites/functions', parameters('ConsumerFunctionAppName'), 'EventGridProcessorAsync')]"
+          }
+        },
+        "eventDeliverySchema": "EventGridSchema"
+      }
+    },
+    {
+      "type": "Microsoft.EventGrid/eventSubscriptions",
+      "scope": "[resourceId('Microsoft.EventGrid/topics', parameters('EventGridTopicName'))]",
+      "apiVersion": "2020-06-01",
+      "name": "[concat(parameters('ConsumerFunctionAppName'), '5')]",
+      "properties": {
+        "destination": {
+          "endpointType": "AzureFunction",
+          "properties": {
+            "resourceId": "[resourceId('Microsoft.Web/Sites/functions', concat(parameters('ConsumerFunctionAppName'), '5'), 'EventGridProcessorAsync')]"
+          }
+        },
+        "eventDeliverySchema": "EventGridSchema"
       }
     }
   ]

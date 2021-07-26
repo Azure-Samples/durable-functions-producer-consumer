@@ -33,6 +33,10 @@
     "EventHubKafkaNamespaceName": {
       "defaultValue": "[concat('ehk', uniqueString(subscription().id, resourceGroup().id))]",
       "type": "string"
+    },
+    "EventGridTopicName": {
+      "defaultValue": "[concat('egt', uniqueString(subscription().id, resourceGroup().id))]",
+      "type": "string"
     }
   },
   "variables": {
@@ -257,23 +261,51 @@
       },
       "tags": {
         "sample": "[variables('sampleName')]"
-      }
-    },
-    {
-      "type": "Microsoft.Storage/storageAccounts/blobServices",
-      "apiVersion": "2019-04-01",
-      "name": "[concat(parameters('StorageAccountName'), '/default')]",
-      "dependsOn": [
-        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
-      ],
-      "properties": {
-        "deleteRetentionPolicy": {
-          "enabled": false
-        }
       },
-      "tags": {
-        "sample": "[variables('sampleName')]"
-      }
+      "resources": [
+        {
+          "type": "blobServices",
+          "apiVersion": "2019-04-01",
+          "name": "/default",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+          ],
+          "properties": {
+            "deleteRetentionPolicy": {
+              "enabled": false
+            }
+          },
+          "tags": {
+            "sample": "[variables('sampleName')]"
+          }
+        },
+        {
+          "type": "queueServices",
+          "apiVersion": "2021-04-01",
+          "name": "/default",
+          "dependsOn": [
+            "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+          ],
+          "properties": {
+            "cors": {
+              "corsRules": []
+            }
+          },
+          "tags": {
+            "sample": "[variables('sampleName')]"
+          },
+          "resources": [
+            {
+              "type": "queues",
+              "apiVersion": "2021-04-01",
+              "name": "sample",
+              "dependsOn": [
+                "[resourceId('Microsoft.Storage/storageAccounts/queueServices', parameters('StorageAccountName'), 'default')]"
+              ]
+            }
+          ]
+        }
+      ]
     },
     {
       "type": "Microsoft.Web/serverfarms",
@@ -300,6 +332,19 @@
       }
     },
     {
+      "type": "microsoft.insights/components",
+      "kind": "other",
+      "name": "[parameters('ConsumerFunctionAppName')]",
+      "apiVersion": "2014-04-01",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "sample": "[variables('sampleName')]"
+      },
+      "properties": {
+        "ApplicationId": "[parameters('ConsumerFunctionAppName')]"
+      }
+    },
+    {
       "type": "Microsoft.Web/sites",
       "apiVersion": "2016-08-01",
       "name": "[parameters('ConsumerFunctionAppName')]",
@@ -308,7 +353,8 @@
         "[resourceId('Microsoft.Web/serverfarms', parameters('FunctionPlanName'))]",
         "[resourceId('Microsoft.ServiceBus/namespaces', parameters('ServiceBusNamespaceName'))]",
         "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubNamespaceName'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]",
+        "[resourceId('microsoft.insights/components', parameters('ConsumerFunctionAppName'))]"
       ],
       "kind": "functionapp",
       "properties": {
@@ -326,6 +372,10 @@
             {
               "name": "AzureWebJobsStorage",
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('StorageAccountName'), ';AccountKey=', listKeys(parameters('StorageAccountName'),'2019-04-01').keys[0].value)]"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(concat('microsoft.insights/components/', parameters('ConsumerFunctionAppName'))).InstrumentationKey]"
             },
             {
               "name": "CollectorEventHubConnection",
@@ -398,13 +448,26 @@
             "[resourceId('Microsoft.Web/Sites', parameters('ConsumerFunctionAppName'))]"
           ],
           "properties": {
-            "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer",
+            "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer.git",
             "branch": "main",
             "isManualIntegration": true,
             "isMercurial": false
           }
         }
       ]
+    },
+    {
+      "type": "microsoft.insights/components",
+      "kind": "other",
+      "name": "[concat(parameters('ConsumerFunctionAppName'), '5')]",
+      "apiVersion": "2014-04-01",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "sample": "[variables('sampleName')]"
+      },
+      "properties": {
+        "ApplicationId": "[concat(parameters('ConsumerFunctionAppName'), '5')]"
+      }
     },
     {
       "type": "Microsoft.Web/sites",
@@ -415,7 +478,8 @@
         "[resourceId('Microsoft.Web/serverfarms', parameters('FunctionPlanName'))]",
         "[resourceId('Microsoft.ServiceBus/namespaces', parameters('ServiceBusNamespaceName'))]",
         "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubNamespaceName'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]",
+        "[resourceId('microsoft.insights/components', concat(parameters('ConsumerFunctionAppName'), '5'))]"
       ],
       "kind": "functionapp",
       "properties": {
@@ -433,6 +497,10 @@
             {
               "name": "AzureWebJobsStorage",
               "value": "[concat('DefaultEndpointsProtocol=https;AccountName=', parameters('StorageAccountName'), ';AccountKey=', listKeys(parameters('StorageAccountName'),'2019-04-01').keys[0].value)]"
+            },
+            {
+              "name": "APPINSIGHTS_INSTRUMENTATIONKEY",
+              "value": "[reference(concat('microsoft.insights/components/', concat(parameters('ConsumerFunctionAppName'), '5'))).InstrumentationKey]"
             },
             {
               "name": "CollectorEventHubConnection",
@@ -505,7 +573,7 @@
             "[resourceId('Microsoft.Web/Sites', concat(parameters('ConsumerFunctionAppName'), '5'))]"
           ],
           "properties": {
-            "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer",
+            "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer.git",
             "branch": "main",
             "isManualIntegration": true,
             "isMercurial": false
@@ -523,7 +591,8 @@
         "[resourceId('Microsoft.ServiceBus/namespaces', parameters('ServiceBusNamespaceName'))]",
         "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubNamespaceName'))]",
         "[resourceId('Microsoft.EventHub/namespaces', parameters('EventHubKafkaNamespaceName'))]",
-        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]"
+        "[resourceId('Microsoft.Storage/storageAccounts', parameters('StorageAccountName'))]",
+        "[resourceId('Microsoft.EventGrid/topics', parameters('EventGridTopicName'))]"
       ],
       "kind": "functionapp",
       "properties": {
@@ -573,6 +642,14 @@
             {
               "name": "EventHubPartitions",
               "value": "32"
+            },
+            {
+              "name": "EventGridTopicEndpoint",
+              "value": "[reference(parameters('EventGridTopicName')).endpoint]"
+            },
+            {
+              "name": "EventGridTopicKey",
+              "value": "[listKeys(resourceId('Microsoft.EventGrid/topics', parameters('EventGridTopicName')), '2019-06-01').key1]"
             },
             {
               "name": "FUNCTIONS_EXTENSION_RUNTIME",
@@ -625,13 +702,30 @@
             "[resourceId('Microsoft.Web/Sites', parameters('ProducerFunctionAppName'))]"
           ],
           "properties": {
-            "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer",
+            "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer.git",
             "branch": "main",
             "isManualIntegration": true,
             "isMercurial": false
           }
         }
       ]
+    },
+    {
+      "type": "Microsoft.EventGrid/topics",
+      "apiVersion": "2020-10-15-preview",
+      "name": "[parameters('EventGridTopicName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Basic"
+      },
+      "kind": "Azure",
+      "identity": {
+        "type": "None"
+      },
+      "properties": {
+        "inputSchema": "EventGridSchema",
+        "publicNetworkAccess": "Enabled"
+      }
     }
   ],
   "outputs": {

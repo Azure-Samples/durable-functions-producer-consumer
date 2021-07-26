@@ -47,7 +47,7 @@ else {
 
 # Register required RPs
 Write-Host "Registering resource providers..."
-foreach ($resourceProvider in @("microsoft.storage", "microsoft.web", "microsoft.servicebus", "microsoft.kusto", "microsoft.eventhub")) {
+foreach ($resourceProvider in @("microsoft.storage", "microsoft.web", "microsoft.servicebus", "microsoft.kusto", "microsoft.eventhub", "microsoft.eventgrid")) {
     Register-AzResourceProvider -ProviderNamespace $resourceProvider >$null
 }
 
@@ -81,9 +81,6 @@ $serviceBusProducer = $initialDeployResult.Outputs.Item("serviceBusProducer").Va
 $storageQueueProducer = $initialDeployResult.Outputs.Item("storageQueueProducer").Value
 $eventGridProducer = $initialDeployResult.Outputs.Item("eventGridProducer").Value
 $storageAccount = $initialDeployResult.Outputs.Item("storageAccountName").Value
-
-# Storage queues aren't able to be created by ARM templates (yet) - create via AzPosh
-Get-AzStorageAccount -Name $storageAccount -ResourceGroupName $resourceGroupName | New-AzStorageQueue -Name sample >$null
 
 # Get auth token to execute Kusto queries against the Data Explorer instance to create table & data mapping
 import-module az
