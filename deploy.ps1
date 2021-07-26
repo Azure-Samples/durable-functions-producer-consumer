@@ -47,7 +47,7 @@ else {
 
 # Register required RPs
 Write-Host "Registering resource providers..."
-foreach ($resourceProvider in @("microsoft.storage", "microsoft.web", "microsoft.servicebus", "microsoft.kusto", "microsoft.eventhub")) {
+foreach ($resourceProvider in @("microsoft.storage", "microsoft.web", "microsoft.servicebus", "microsoft.kusto", "microsoft.eventhub", "microsoft.eventgrid")) {
     Register-AzResourceProvider -ProviderNamespace $resourceProvider >$null
 }
 
@@ -110,6 +110,9 @@ Invoke-RestMethod -Method Post -Uri "$dexResourceUrl/v1/rest/mgmt" -Body (Conver
 
 Write-Host "Setting up data ingestion from Event Hub -> Data Explorer..."
 New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile "azuredeploy.dexdataconnection.json" -Name $dexDeploymentName >$null
+
+Write-Host "Adding Event Grid subscriptions..."
+New-AzEventGridSubscription -EventSubscriptionName "eg$($resourceGroupName)" -Endpoint l
 
 Write-Host "Done!" -ForegroundColor Green
 Write-Host "Your Producer URLs are as follows:`nEvent Hubs: $($eventHubProducerUrl)`nEvent Hubs Kafka: $($eventHubKafkaProducerUrl)`nService Bus: $($serviceBusProducer)`nStorage Queue: $($storageQueueProducer)`nEvent Grid: $($eventGridProducer)`n`nView the readme for their associated payloads."

@@ -33,6 +33,10 @@
     "EventHubKafkaNamespaceName": {
       "defaultValue": "[concat('ehk', uniqueString(subscription().id, resourceGroup().id))]",
       "type": "string"
+    },
+    "EventGridTopicName": {
+      "defaultValue": "[concat('egt', uniqueString(subscription().id, resourceGroup().id))]",
+      "type": "string"
     }
   },
   "variables": {
@@ -575,6 +579,14 @@
               "value": "32"
             },
             {
+              "name": "EventGridTopicEndpoint",
+              "value": "[reference(parameters('EventGridTopicName')).endpoint]"
+            },
+            {
+              "name": "EventGridTopicKey",
+              "value": "[listKeys(resourceId('Microsoft.EventGrid/topics', parameters('EventGridTopicName')), '2019-06-01').key1]"
+            },
+            {
               "name": "FUNCTIONS_EXTENSION_RUNTIME",
               "value": "dotnet"
             },
@@ -632,6 +644,23 @@
           }
         }
       ]
+    },
+    {
+      "type": "Microsoft.EventGrid/topics",
+      "apiVersion": "2020-10-15-preview",
+      "name": "[parameters('EventGridTopicName')]",
+      "location": "[resourceGroup().location]",
+      "sku": {
+        "name": "Basic"
+      },
+      "kind": "Azure",
+      "identity": {
+        "type": "None"
+      },
+      "properties": {
+        "inputSchema": "EventGridSchema",
+        "publicNetworkAccess": "Enabled"
+      }
     }
   ],
   "outputs": {
