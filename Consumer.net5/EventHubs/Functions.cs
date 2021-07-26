@@ -7,23 +7,17 @@ using Microsoft.ApplicationInsights;
 using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Logging.ApplicationInsights;
 
 namespace Consumer.EventHubs
 {
     public partial class Functions
     {
         private static readonly string _instanceId = Guid.NewGuid().ToString();
-        private static ILogger _logger;
         private readonly TelemetryClient _metricTelemetryClient;
 
         ///// Using dependency injection will guarantee that you use the same configuration for telemetry collected automatically and manually.
-        public Functions(ILoggerProvider loggerProvider, TelemetryConfiguration telemetryConfig)
+        public Functions(TelemetryConfiguration telemetryConfig)
         {
-#if DEBUG
-            System.Diagnostics.Debugger.Launch();
-#endif
-            _logger ??= loggerProvider.CreateLogger(nameof(EventHubProcessorAsync));
 
             _metricTelemetryClient = new TelemetryClient(telemetryConfig);
         }
@@ -40,14 +34,14 @@ namespace Consumer.EventHubs
 #if DEBUG
             System.Diagnostics.Debugger.Launch();
 #endif
-            var log = context.InstanceServices.GetService(typeof(ApplicationInsightsLoggerProvider));
+            var log = context.GetLogger(nameof(EventHubProcessorAsync));
 
             var outputItems = new List<string>();
 
             for (int i = 0; i < ehMessages.Length; i++)
             {
                 var ehMessage = ehMessages[i];
-                _logger.LogInformation($@"EventHub Message received: {ehMessage}");
+                log.LogInformation($@"EventHub Message received: {ehMessage}");
 
 
                 var timestamp = DateTime.UtcNow;
@@ -79,13 +73,13 @@ namespace Consumer.EventHubs
                         }
                 };
 
-                _logger.LogTrace($@"[{testRunId.GetString() ?? "null"}]: Message received at {timestamp}: {new
+                log.LogTrace($@"[{testRunId.GetString() ?? "null"}]: Message received at {timestamp}: {new
                 {
                     Body = $@"{ehMessage.Length} byte(s)",
                     _elapsedTimeMs = elapsedTimeMs
                 }}");
 
-                _logger.LogMetric("messageProcessTimeMs",
+                log.LogMetric("messageProcessTimeMs",
                     elapsedTimeMs,
                     new Dictionary<string, object> {
                             { @"PartitionId", partitionContext.GetProperty("PartitionId").GetString() },

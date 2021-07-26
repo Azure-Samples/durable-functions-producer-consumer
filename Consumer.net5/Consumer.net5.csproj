@@ -14,6 +14,7 @@
 		<Compile Include="..\Consumer\CollectorMessage.cs" Link="CollectorMessage.cs" />
 	</ItemGroup>
 	<ItemGroup>
+		<PackageReference Include="Azure.Messaging.ServiceBus" Version="7.2.1" />
 		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.EventGrid" Version="2.1.0" />
 		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.EventHubs" Version="4.2.1" />
 		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" Version="4.2.1" />
