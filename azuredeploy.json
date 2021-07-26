@@ -506,7 +506,7 @@
           ],
           "properties": {
             "repoUrl": "https://github.com/Azure-Samples/durable-functions-producer-consumer",
-            "branch": "net5-consumer",
+            "branch": "main",
             "isManualIntegration": true,
             "isMercurial": false
           }
