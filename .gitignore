@@ -265,3 +265,6 @@ __pycache__/
 *.pubxml
 
 /Producer/GcpPubSub/authfile/*.json
+
+/Consumer.net5/Properties/ServiceDependencies/*
+/Consumer.net5/Properties/serviceDependencies.*

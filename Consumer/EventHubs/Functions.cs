@@ -15,7 +15,7 @@ namespace Consumer.EventHubs
 
         [FunctionName(nameof(EventHubProcessorAsync))]
         public static async Task EventHubProcessorAsync(
-            [EventHubTrigger(@"%EventHubName%", Connection = @"EventHubConnection")] EventData[] ehMessages,
+            [EventHubTrigger(@"%EventHubName%", Connection = @"EventHubConnection", ConsumerGroup = "%EventHubConsumerGroupName%")] EventData[] ehMessages,
             PartitionContext partitionContext,
             [EventHub(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")] IAsyncCollector<string> collector,
             ILogger log)

@@ -6,6 +6,7 @@ using Microsoft.Azure.ServiceBus;
 using Microsoft.Azure.WebJobs;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
+using Webjobs = Microsoft.Azure.WebJobs;
 
 namespace Consumer.ServiceBus
 {
@@ -16,7 +17,7 @@ namespace Consumer.ServiceBus
         [FunctionName(nameof(ServiceBusQueueProcessorAsync))]
         public static async Task ServiceBusQueueProcessorAsync(
             [ServiceBusTrigger(@"%ServiceBusQueueName%", Connection = @"ServiceBusConnection", IsSessionsEnabled = true)] Message sbMessage,
-            [EventHub(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")]IAsyncCollector<string> collector,
+            [EventHub(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")] IAsyncCollector<string> collector,
             ILogger log)
         {
             var timestamp = DateTime.UtcNow;
@@ -63,8 +64,9 @@ namespace Consumer.ServiceBus
 
         [FunctionName(nameof(ClearDeadLetterServiceBusQueue))]
 #pragma warning disable IDE0060 // Remove unused parameter
-        public static void ClearDeadLetterServiceBusQueue([TimerTrigger("* 0 * * 1", RunOnStartup = true)]TimerInfo myTimer, ILogger log)
+        public static void ClearDeadLetterServiceBusQueue([TimerTrigger("* 0 * * 1", RunOnStartup = true)] TimerInfo myTimer,
 #pragma warning restore IDE0060 // Remove unused parameter
+            ILogger log)
         {
             var deadLetterQueueName = $@"{Environment.GetEnvironmentVariable("ServiceBusQueueName")}/$DeadLetterQueue";
             var client = new QueueClient(Environment.GetEnvironmentVariable(@"ServiceBusConnection"),

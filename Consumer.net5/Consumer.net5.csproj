@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<TargetFramework>net5.0</TargetFramework>
+		<AzureFunctionsVersion>v3</AzureFunctionsVersion>
+		<OutputType>Exe</OutputType>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+	  <DefineConstants>TRACE;NET5</DefineConstants>
+	</PropertyGroup>
+	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+	  <DefineConstants>NET5</DefineConstants>
+	</PropertyGroup>
+	<ItemGroup>
+		<Compile Include="..\Consumer\CollectorMessage.cs" Link="CollectorMessage.cs" />
+	</ItemGroup>
+	<ItemGroup>
+		<PackageReference Include="Azure.Messaging.EventGrid" Version="4.5.0" />
+		<PackageReference Include="Azure.Messaging.ServiceBus" Version="7.2.1" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.EventGrid" Version="2.1.0" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.EventHubs" Version="4.2.1" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" Version="4.2.1" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage" Version="4.0.4" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.1.0" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.0.3" OutputItemType="Analyzer" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.3.0" />
+		<PackageReference Include="Microsoft.Extensions.Logging.ApplicationInsights" Version="2.17.0" />
+	</ItemGroup>
+	<ItemGroup>
+		<None Update="host.json">
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<None Update="local.settings.json">
+		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+	</ItemGroup>
+</Project>

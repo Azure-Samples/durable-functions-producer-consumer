@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using System.Text.Json;
 
 namespace Consumer
 {
-    internal class CollectorMessage
+    public class CollectorMessage
     {
         public DateTime MessageProcessedTime { get; set; }
         public string CloudProvider { get; } = @"Azure";
@@ -13,6 +12,6 @@ namespace Consumer
         public string Trigger { get; set; }
         public Dictionary<string, object> Properties { get; set; }
 
-        public override string ToString() => JsonConvert.SerializeObject(this);
+        public override string ToString() => JsonSerializer.Serialize(this);
     }
 }

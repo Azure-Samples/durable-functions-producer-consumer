@@ -5,6 +5,7 @@
     "ServiceBusQueueName": "sample",
     "EventHubConnection": "Endpoint=sb://...no-entity-path",
     "EventHubName": "sample",
+    "EventHubConsumerGroupName": "$Default",
     "StorageQueueConnection": "DefaultEndpointsProtocol=https;AccountName=...",
     "StorageQueueName": "sample",
     "CollectorEventHubConnection": "Endpoint=sb://...no-entity-path",
