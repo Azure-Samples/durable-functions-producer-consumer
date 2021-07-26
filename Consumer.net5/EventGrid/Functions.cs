@@ -1,67 +1,84 @@
 using System;
+using System.Collections.Generic;
+using System.Text.Json;
 using System.Threading.Tasks;
+using Azure.Messaging.EventGrid;
+using Microsoft.ApplicationInsights;
+using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 
 namespace Consumer.EventGrid
 {
-    public static class Functions
+    public class Functions
     {
         private static readonly string _instanceId = Guid.NewGuid().ToString();
+        private readonly TelemetryClient _metricTelemetryClient;
+
+        ///// Using dependency injection will guarantee that you use the same configuration for telemetry collected automatically and manually.
+        public Functions(TelemetryConfiguration telemetryConfig)
+        {
+
+            _metricTelemetryClient = new TelemetryClient(telemetryConfig);
+        }
 
         [Function(nameof(EventGridProcessorAsync))]
         [EventHubOutput(@"%CollectorEventHubName%", Connection = @"CollectorEventHubConnection")]
-        public static async Task<string> EventGridProcessorAsync(
-            [EventGridTrigger] string gridMessage,
+        public async Task<string> EventGridProcessorAsync(
+            [EventGridTrigger] string rawGridMessage,
             FunctionContext functionContext)
         {
+#if DEBUG
+            System.Diagnostics.Debugger.Launch();
+#endif
             var log = functionContext.GetLogger(nameof(EventGridProcessorAsync));
-            log.LogInformation($@"EventGrid message received: {gridMessage}");
-            //log.LogInformation($@"EventGrid Message received: {JsonSerializer.Serialize(gridMessage)}");
 
-            //var timestamp = DateTime.UtcNow;
+            log.LogInformation($@"EventGrid message received: {rawGridMessage}");
+            var gridMessage = JsonSerializer.Deserialize<EventGridEvent>(rawGridMessage);
 
-            //var jsonMessage = JObject.FromObject(gridMessage);
-            //var jsonContent = JObject.FromObject(gridMessage.Data);
+            var timestamp = DateTime.UtcNow;
 
-            //var enqueuedTime = gridMessage.EventTime;
-            //var elapsedTimeMs = (timestamp - enqueuedTime).TotalMilliseconds;
+            var jsonContent = JsonSerializer.Deserialize<JsonElement>(gridMessage.Data);
 
-            //if (jsonContent.TryGetValue(@"workTime", out var workTime))
-            //{
-            //    await Task.Delay(workTime.Value<int>());
-            //}
+            var enqueuedTime = gridMessage.EventTime;
+            var elapsedTimeMs = (timestamp - enqueuedTime).TotalMilliseconds;
 
-            //var collectorItem = new CollectorMessage
-            //{
-            //    MessageProcessedTime = DateTime.UtcNow,
-            //    TestRun = jsonContent.Value<string>(@"TestRunId"),
-            //    Trigger = @"EventGrid",
-            //    Properties = new Dictionary<string, object>
-            //    {
-            //        { @"InstanceId", _instanceId },
-            //        { @"ExecutionId", Guid.NewGuid().ToString() },
-            //        { @"ElapsedTimeMs", elapsedTimeMs },
-            //        { @"ClientEnqueueTimeUtc", enqueuedTime },
-            //        { @"MessageId", jsonContent.Value<int>(@"MessageId") },
-            //        { @"DequeuedTime", timestamp },
-            //        { @"Language", @"csharp" },
-            //    }
-            //};
+            if (jsonContent.TryGetProperty(@"workTime", out var workTime))
+            {
+                await Task.Delay(workTime.GetInt32());
+            }
 
-            //jsonMessage.Add(@"_elapsedTimeMs", elapsedTimeMs);
-            //log.LogTrace($@"[{jsonContent.Value<string>(@"TestRunId")}]: Message received at {timestamp}: {jsonMessage}");
+            var testRunId = jsonContent.GetProperty(@"TestRunId").GetString();
+            var messageId = jsonContent.GetProperty(@"MessageId").GetInt32();
+            var collectorItem = new CollectorMessage
+            {
+                MessageProcessedTime = DateTime.UtcNow,
+                TestRun = testRunId,
+                Trigger = @"EventGrid",
+                Properties = new Dictionary<string, object>
+                {
+                    { @"InstanceId", _instanceId },
+                    { @"ExecutionId", Guid.NewGuid().ToString() },
+                    { @"ElapsedTimeMs", elapsedTimeMs },
+                    { @"ClientEnqueueTimeUtc", enqueuedTime },
+                    { @"MessageId", messageId },
+                    { @"DequeuedTime", timestamp },
+                    { @"Language", @"csharp" },
+                }
+            };
 
-            //log.LogMetric("messageProcessTimeMs",
-            //    elapsedTimeMs,
-            //    new Dictionary<string, object> {
-            //            { @"MessageId", jsonContent.Value<int>(@"MessageId") },
-            //            { @"ClientEnqueuedTime", enqueuedTime },
-            //            { @"DequeuedTime", timestamp },
-            //            { @"Language", @"csharp" },
-            //    });
+            log.LogTrace($@"[{testRunId}]: Message received at {timestamp}: {gridMessage.Data}");
 
-            return null;// collectorItem.ToString();
+            _metricTelemetryClient.TrackMetric("messageProcessTimeMs",
+                elapsedTimeMs,
+                new Dictionary<string, string> {
+                        { @"MessageId", messageId.ToString() },
+                        { @"ClientEnqueuedTime", enqueuedTime.ToString() },
+                        { @"DequeuedTime", timestamp.ToString() },
+                        { @"Language", @"csharp" },
+                });
+
+            return collectorItem.ToString();
         }
     }
 }

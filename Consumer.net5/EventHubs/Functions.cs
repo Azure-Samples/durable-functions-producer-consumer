@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Consumer.EventHubs
 {
-    public partial class Functions
+    public class Functions
     {
         private static readonly string _instanceId = Guid.NewGuid().ToString();
         private readonly TelemetryClient _metricTelemetryClient;
@@ -31,9 +31,6 @@ namespace Consumer.EventHubs
             JsonElement partitionContext,
             FunctionContext context)
         {
-#if DEBUG
-            System.Diagnostics.Debugger.Launch();
-#endif
             var log = context.GetLogger(nameof(EventHubProcessorAsync));
 
             var outputItems = new List<string>();

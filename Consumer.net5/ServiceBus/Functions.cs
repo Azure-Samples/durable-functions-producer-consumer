@@ -10,7 +10,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Consumer.ServiceBus
 {
-    public partial class Functions
+    public class Functions
     {
         private static readonly string _instanceId = Guid.NewGuid().ToString();
         private readonly TelemetryClient _metricTelemetryClient;
@@ -32,9 +32,6 @@ namespace Consumer.ServiceBus
             JsonElement messageSession,
             FunctionContext context)
         {
-#if DEBUG
-            System.Diagnostics.Debugger.Launch();
-#endif
             var log = context.GetLogger(nameof(ServiceBusQueueProcessorAsync));
             log.LogInformation($@"ServiceBus message received: {sbMessage}");
             var timestamp = DateTime.UtcNow;
@@ -47,7 +44,7 @@ namespace Consumer.ServiceBus
 
             if (userProperties.TryGetProperty(@"workTime", out var workTimeProperty))
             {
-                await Task.Delay((int)workTimeProperty.GetInt32());
+                await Task.Delay(workTimeProperty.GetInt32());
             }
 
             var collectorItem = new CollectorMessage
