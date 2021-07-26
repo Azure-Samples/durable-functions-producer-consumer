@@ -82,9 +82,6 @@ $storageQueueProducer = $initialDeployResult.Outputs.Item("storageQueueProducer"
 $eventGridProducer = $initialDeployResult.Outputs.Item("eventGridProducer").Value
 $storageAccount = $initialDeployResult.Outputs.Item("storageAccountName").Value
 
-# Storage queues aren't able to be created by ARM templates (yet) - create via AzPosh
-Get-AzStorageAccount -Name $storageAccount -ResourceGroupName $resourceGroupName | New-AzStorageQueue -Name sample >$null
-
 # Get auth token to execute Kusto queries against the Data Explorer instance to create table & data mapping
 import-module az
 $context = [Microsoft.Azure.Commands.Common.Authentication.Abstractions.AzureRmProfileProvider]::Instance.Profile.DefaultContext
@@ -110,9 +107,6 @@ Invoke-RestMethod -Method Post -Uri "$dexResourceUrl/v1/rest/mgmt" -Body (Conver
 
 Write-Host "Setting up data ingestion from Event Hub -> Data Explorer..."
 New-AzResourceGroupDeployment -ResourceGroupName $resourceGroupName -TemplateFile "azuredeploy.dexdataconnection.json" -Name $dexDeploymentName >$null
-
-Write-Host "Adding Event Grid subscriptions..."
-New-AzEventGridSubscription -EventSubscriptionName "eg$($resourceGroupName)" -Endpoint l
 
 Write-Host "Done!" -ForegroundColor Green
 Write-Host "Your Producer URLs are as follows:`nEvent Hubs: $($eventHubProducerUrl)`nEvent Hubs Kafka: $($eventHubKafkaProducerUrl)`nService Bus: $($serviceBusProducer)`nStorage Queue: $($storageQueueProducer)`nEvent Grid: $($eventGridProducer)`n`nView the readme for their associated payloads."
