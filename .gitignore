@@ -271,3 +271,4 @@ __pycache__/
 # Azurite local storage
 __azurite_db_*__.json
 __*storage__/
+main.json
