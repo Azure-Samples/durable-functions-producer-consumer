@@ -5,12 +5,12 @@
     "ServiceBusQueueName": "sample",
     "EventHubConnection": "Endpoint=sb://...no-entity-path",
     "EventHubName": "sample",
-    "EventHubConsumerGroupName": "net3",
+    "EventHubConsumerGroupName": "net5",
     "StorageQueueConnection": "DefaultEndpointsProtocol=https;AccountName=...",
     "StorageQueueName": "sample",
     "CollectorEventHubConnection": "Endpoint=sb://...no-entity-path",
     "CollectorEventHubName": "collector",
-    "FUNCTIONS_WORKER_RUNTIME": "dotnet",
+    "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
     "AzureWebJobsStorage": "UseDevelopmentStorage=true"
   }
 }

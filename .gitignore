@@ -266,5 +266,9 @@ __pycache__/
 
 /Producer/GcpPubSub/authfile/*.json
 
-/Consumer.net5/Properties/ServiceDependencies/*
-/Consumer.net5/Properties/serviceDependencies.*
+**/PublishProfiles
+
+# Azurite local storage
+__azurite_db_*__.json
+__*storage__/
+main.json
