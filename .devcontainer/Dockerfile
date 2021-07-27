@@ -10,7 +10,9 @@ ENV DEBIAN_FRONTEND=noninteractive
 
 #install .NET 5.0
 RUN apt-get update \
-    && apt-get -y install --no-install-recommends dotnet-sdk-5.0 \
+    && apt-get -y install --no-install-recommends \
+        dotnet-sdk-5.0 \
+        jq \
     #
     # Clean up
     && apt-get autoremove -y \
