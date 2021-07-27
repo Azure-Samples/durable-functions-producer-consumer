@@ -138,17 +138,9 @@ resource fxStorageAccount 'Microsoft.Storage/storageAccounts@2021-04-01' = {
 resource fxPlan 'Microsoft.Web/serverfarms@2021-01-15' = {
   name: functionPlanName
   location: resourceGroup().location
-  kind: 'functionapp'
   sku: {
     name: 'Y1'
     tier: 'Dynamic'
-    size: 'Y1'
-    family: 'Y'
-    capacity: 0
-  }
-  properties: {
-    targetWorkerCount: 0
-    elasticScaleEnabled: true
   }
   tags: sampleTags
 }
