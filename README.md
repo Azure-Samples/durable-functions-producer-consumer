@@ -111,22 +111,30 @@ This project comes out of a customer engagement whereby we wanted to see how lon
 
 ### Deploy to Azure
 
-You can deploy the solution in this repo directly to Azure by simply executing `deploy.ps1` from PowerShell. You'll need to have [Azure PowerShell installed](https://docs.microsoft.com/en-us/powershell/azure/install-az-ps?view=azps-2.4.0#install-the-azure-powershell-module-1) and your Azure Subscription ID handy. Upon completion, your subscription will have a new Resource Group (you'll name this when you execute `deploy.ps1`) with:
+1. Open the solution in GitHub Codespaces or VS Code Dev Containers
+1. Login to Azure by running `az login`
+1. Execute `.\deploy.ps1 <subscription id> <resource group name> [location]`
+
+Upon completion, your subscription will have the Resource Group you named above with:
 
 * Service Bus **Standard** namespace with a `sample` queue
 * Event Hub **Basic** namespace
   * A `collector` hub w/ 32 partitions - this is where each consumer posts messages when they consume from their source
   * A `sample` hub with 32 partitions - this is where the Producer will post messages for the EH scenario
+    * A `net5` consumer group for the .NET5-based Consumer Function
+    * A `net3` consumer group for the .NET3-based Consumer Function
 * Event Hub **Standard** namespace with Kafka enabled
   * A `sample` hub with 32 partitions - this is where the Producer will post messages using Kafka protocol for the EH-Kafka scenario
 * Azure Data Explorer **Dev** instance ingesting data from the above Event Hub
 * Azure Storage instance for use by the Durable Functions and the Storage Queue producer/consumer paths (`sample` queue created)
 * 1 Azure Function app with the Producer Function code
   * Application settings set to the connection strings of the Service Bus, Event Hub, and Azure Storage
-* 1 Azure Function app with the Consumer Function code
+* 1 Azure Function app with the .NET 3 (in-proc worker) Consumer Function code
+  * Application settings set to the connection strings of the Service Bus, Event Hub, and Azure Storage
+* 1 Azure Function app with the .NET 5 (out-of-proc worker) Consumer Function code
   * Application settings set to the connection strings of the Service Bus, Event Hub, and Azure Storage
 
-> Note: The deployment script sets up an initial deploy from GitHub to the created Function Apps. If you wish to change any behavior of this sample, you will need to manually publish your changes _after_ first deploying the sample. Additionally, any subsequent executions of `deploy.ps1` will reset the code to the state of `master` in this repo.
+> Note: The deployment script sets up an initial deploy from GitHub to the created Function Apps. If you wish to change any behavior of this sample, you will need to manually publish your changes _after_ first deploying the sample and then disconnecting the `ExternalGit` deployment from the Function App you're modifying. Additionally, any subsequent executions of `deploy.ps1` will reset the code to the state of `main` in this repo.
 
 Upon successful deployment you'll be given the HTTP POST URLs for each of the Producer endpoints. Using the sample payloads earlier in this Readme, you'll get a response like:
 
