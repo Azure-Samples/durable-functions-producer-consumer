@@ -32,6 +32,21 @@ initialDeployResult=`az deployment group create -n $deploymentName -g $resourceG
 
 if [ $? -eq 0 ]
 then
+
+echo 'Building & Deploying Function Apps ...'
+pushd ./Producer > /dev/null
+appName=`echo $initialDeployResult | jq -r '.properties.outputs["producerApp"].value'`
+func azure functionapp publish $appName --csharp
+popd > /dev/null
+pushd ./Consumer > /dev/null
+appName=`echo $initialDeployResult | jq -r '.properties.outputs["consumerApp"].value'`
+func azure functionapp publish $appName --csharp
+popd > /dev/null
+pushd ./Consumer.net5 > /dev/null
+appName=`echo $initialDeployResult | jq -r '.properties.outputs["consumerAppv5"].value'`
+func azure functionapp publish $appName --csharp
+popd > /dev/null
+
 createTableRequestBody="{ 'csl':'.create table SampleDataTable (MessageProcessedTime: datetime, CloudProvider: string, TestRun: string, Trigger: string, Properties: dynamic)',	'db':'sampledata' }"
 createDataMappingRequestBody="{	'csl':'.create table SampleDataTable ingestion json mapping \'DataMapping\' \'[{ \"column\":\"MessageProcessedTime\",\"path\":\"$.MessageProcessedTime\",\"datatype\":\"datetime\"},{\"column\":\"CloudProvider\",\"path\":\"$.CloudProvider\",\"datatype\":\"string\"},{\"column\":\"TestRun\",\"path\":\"$.TestRun\",\"datatype\":\"string\"},{\"column\":\"Trigger\",\"path\":\"$.Trigger\",\"datatype\":\"string\"},{\"column\":\"Properties\",\"path\":\"$.Properties\",\"datatype\":\"dynamic\"}]\'',	'db':'sampledata' }"
 

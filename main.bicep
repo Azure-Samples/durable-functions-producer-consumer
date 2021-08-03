@@ -244,20 +244,7 @@ resource producerApp 'Microsoft.Web/sites@2021-01-15' = {
           'name': 'WEBSITE_CONTENTSHARE'
           'value': toLower(producerFunctionAppName)
         }
-        {
-          'name': 'PROJECT'
-          'value': 'Producer/'
-        }
       ]
-    }
-  }
-
-  resource sourceControlDeploy 'sourcecontrols' = {
-    name: 'web'
-    properties: {
-      repoUrl: 'https://github.com/Azure-Samples/durable-functions-producer-consumer.git'
-      branch: 'main'
-      isManualIntegration: true
     }
   }
 }
@@ -343,20 +330,7 @@ resource consumerApp 'Microsoft.Web/sites@2021-01-15' = {
           'name': 'WEBSITE_CONTENTSHARE'
           'value': toLower(consumerFunctionAppName)
         }
-        {
-          'name': 'PROJECT'
-          'value': 'Consumer/'
-        }
       ]
-    }
-  }
-
-  resource sourceControlDeploy 'sourcecontrols' = {
-    name: 'web'
-    properties: {
-      repoUrl: 'https://github.com/Azure-Samples/durable-functions-producer-consumer.git'
-      branch: 'main'
-      isManualIntegration: true
     }
   }
 }
@@ -440,20 +414,7 @@ resource consumerAppv5 'Microsoft.Web/sites@2021-01-15' = {
           'name': 'WEBSITE_CONTENTSHARE'
           'value': toLower(consumerFunctionAppNamev5)
         }
-        {
-          'name': 'PROJECT'
-          'value': 'Consumer.net5/'
-        }
       ]
-    }
-  }
-
-  resource sourceControlDeploy 'sourcecontrols' = {
-    name: 'web'
-    properties: {
-      repoUrl: 'https://github.com/Azure-Samples/durable-functions-producer-consumer.git'
-      branch: 'main'
-      isManualIntegration: true
     }
   }
 }
@@ -472,6 +433,9 @@ resource eventGridTopic 'Microsoft.EventGrid/topics@2020-10-15-preview' = {
   }
 }
 
+output consumerApp string = consumerApp.name
+output consumerAppv5 string = consumerAppv5.name
+output producerApp string = producerApp.name
 output dexbaseUrl string = 'https://dataexplorer.azure.com/clusters/${kustoCluster.name}.${resourceGroup().location}/databases/${kustoCluster::kustoDatabase.name}'
 output dexResourceHost string = '${kustoCluster.name}.${resourceGroup().location}.kusto.windows.net'
 output eventHubProducer string = 'https://${producerApp.name}.azurewebsites.net/api/PostToEventHub?code=${listkeys('${producerApp.id}/host/default/', producerApp.apiVersion).functionKeys.default}'
