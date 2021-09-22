@@ -18,7 +18,6 @@ namespace Consumer.EventGrid
         ///// Using dependency injection will guarantee that you use the same configuration for telemetry collected automatically and manually.
         public Functions(TelemetryConfiguration telemetryConfig)
         {
-
             _metricTelemetryClient = new TelemetryClient(telemetryConfig);
         }
 

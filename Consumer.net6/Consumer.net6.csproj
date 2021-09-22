@@ -1,28 +1,28 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net5.0</TargetFramework>
-		<AzureFunctionsVersion>v3</AzureFunctionsVersion>
+		<TargetFramework>net6.0</TargetFramework>
+		<AzureFunctionsVersion>v4</AzureFunctionsVersion>
 		<OutputType>Exe</OutputType>
 	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-	  <DefineConstants>TRACE;NET5</DefineConstants>
-	</PropertyGroup>
-	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-	  <DefineConstants>NET5</DefineConstants>
-	</PropertyGroup>
 	<ItemGroup>
+		<Compile Include="..\Consumer.net5\EventGrid\Functions.cs" Link="EventGrid\Functions.cs" />
+		<Compile Include="..\Consumer.net5\EventHubs\Functions.cs" Link="EventHubs\Functions.cs" />
+		<Compile Include="..\Consumer.net5\Extensions\ILogger.cs" Link="Extensions\ILogger.cs" />
+		<Compile Include="..\Consumer.net5\Program.cs" Link="Program.cs" />
+		<Compile Include="..\Consumer.net5\ServiceBus\Functions.cs" Link="ServiceBus\Functions.cs" />
+		<Compile Include="..\Consumer.net5\StorageQueues\Functions.cs" Link="StorageQueues\Functions.cs" />
 		<Compile Include="..\Consumer\CollectorMessage.cs" Link="CollectorMessage.cs" />
 	</ItemGroup>
 	<ItemGroup>
 		<PackageReference Include="Azure.Messaging.EventGrid" Version="4.6.0" />
 		<PackageReference Include="Azure.Messaging.ServiceBus" Version="7.3.0" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.0.4" OutputItemType="Analyzer" />
+		<PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.5.1" />
 		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.EventGrid" Version="2.1.0" />
 		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.EventHubs" Version="4.2.1" />
 		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.ServiceBus" Version="4.2.1" />
 		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Storage" Version="4.0.4" />
 		<PackageReference Include="Microsoft.Azure.Functions.Worker.Extensions.Timer" Version="4.1.0" />
-		<PackageReference Include="Microsoft.Azure.Functions.Worker.Sdk" Version="1.0.4" OutputItemType="Analyzer" />
-		<PackageReference Include="Microsoft.Azure.Functions.Worker" Version="1.5.1" />
 		<PackageReference Include="Microsoft.Extensions.Logging.ApplicationInsights" Version="2.18.0" />
 	</ItemGroup>
 	<ItemGroup>
@@ -30,7 +30,15 @@
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 		<None Update="local.settings.json">
-		  <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+			<CopyToPublishDirectory>Never</CopyToPublishDirectory>
 		</None>
+	</ItemGroup>
+	<ItemGroup>
+		<Folder Include="EventGrid\" />
+		<Folder Include="EventHubs\" />
+		<Folder Include="Extensions\" />
+		<Folder Include="StorageQueues\" />
+		<Folder Include="ServiceBus\" />
 	</ItemGroup>
 </Project>
