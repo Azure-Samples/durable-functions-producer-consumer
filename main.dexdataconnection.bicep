@@ -46,3 +46,17 @@ resource consumerAppSubscription5 'Microsoft.EventGrid/eventSubscriptions@2020-0
     eventDeliverySchema: 'EventGridSchema'
   }
 }
+
+resource consumerAppSubscription6 'Microsoft.EventGrid/eventSubscriptions@2020-06-01' = {
+  scope: egTopic
+  name: '${consumerFunctionAppName}6'
+  properties: {
+    destination: {
+      endpointType: 'AzureFunction'
+      properties: {
+        resourceId: resourceId('Microsoft.Web/Sites/functions', '${consumerFunctionAppName}5', 'EventGridProcessorAsync')
+      }
+    }
+    eventDeliverySchema: 'EventGridSchema'
+  }
+}

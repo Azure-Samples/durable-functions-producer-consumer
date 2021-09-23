@@ -7,6 +7,11 @@ location=${3:-'centralus'}
 echo "Selecting subscription..."
 az account set -s $subscriptionId > /dev/null
 
+if [ $? -ne 0 ]
+then
+    exit $?
+fi
+
 deployDateTime=`date +%Y%m%d-%H%M%S`
 
 deploymentName='azureDeploy'-$deployDateTime
@@ -19,7 +24,7 @@ for i in "microsoft.storage" \
             "microsoft.eventhub" \
             "microsoft.eventgrid"
 do
-    az provider register -n $i --wait > /dev/null
+    az provider register -n $i
 done
 
 echo "Creating resource group if needed..."
@@ -36,14 +41,18 @@ then
 echo 'Building & Deploying Function Apps ...'
 pushd ./Producer > /dev/null
 appName=`echo $initialDeployResult | jq -r '.properties.outputs["producerApp"].value'`
-func azure functionapp publish $appName --csharp
+func3 azure functionapp publish $appName --csharp
 popd > /dev/null
 pushd ./Consumer > /dev/null
 appName=`echo $initialDeployResult | jq -r '.properties.outputs["consumerApp"].value'`
-func azure functionapp publish $appName --csharp
+func3 azure functionapp publish $appName --csharp
 popd > /dev/null
 pushd ./Consumer.net5 > /dev/null
 appName=`echo $initialDeployResult | jq -r '.properties.outputs["consumerAppv5"].value'`
+func3 azure functionapp publish $appName --csharp
+popd > /dev/null
+pushd ./Consumer.net6 > /dev/null
+appName=`echo $initialDeployResult | jq -r '.properties.outputs["consumerAppv6"].value'`
 func azure functionapp publish $appName --csharp
 popd > /dev/null
 
@@ -64,7 +73,6 @@ eventHubKafkaProducerUrl=`echo $initialDeployResult | jq -r '.properties.outputs
 serviceBusProducer=`echo $initialDeployResult | jq -r '.properties.outputs["serviceBusProducer"].value'`
 storageQueueProducer=`echo $initialDeployResult | jq -r '.properties.outputs["storageQueueProducer"].value'`
 eventGridProducer=`echo $initialDeployResult | jq -r '.properties.outputs["eventGridProducer"].value'`
-storageAccount=`echo $initialDeployResult | jq -r '.properties.outputs["storageAccountName"].value'`
 
 echo -e "\e[32mDone!"
 echo -e "\e[39mYour Producer URLs are as follows:\nEvent Hubs: "$eventHubProducerUrl"\nEvent Hubs Kafka: "$eventHubKafkaProducerUrl"\nService Bus: "$serviceBusProducer"\nStorage Queue: "$storageQueueProducer"\nEvent Grid: "$eventGridProducer"\n\nView the readme for their associated payloads."

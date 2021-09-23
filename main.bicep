@@ -1,9 +1,12 @@
 var dataExplorerClusterName = toLower('dex${uniqueString(subscription().id, resourceGroup().id)}')
 var consumerFunctionAppName = 'consumer${uniqueString(subscription().id, resourceGroup().id)}'
 var consumerFunctionAppNamev5 = 'consumer${uniqueString(subscription().id, resourceGroup().id)}5'
+var consumerFunctionAppNamev6 = 'consumer${uniqueString(subscription().id, resourceGroup().id)}6'
 var producerFunctionAppName = 'producer${uniqueString(subscription().id, resourceGroup().id)}'
 var functionPlanName = '${uniqueString(subscription().id, resourceGroup().id)}Plan'
 var storageAccountName = toLower('stor${uniqueString(subscription().id, resourceGroup().id)}')
+var storageAccountName5 = toLower('stor5${uniqueString(subscription().id, resourceGroup().id)}')
+var storageAccountName6 = toLower('stor6${uniqueString(subscription().id, resourceGroup().id)}')
 var serviceBusNamespaceName = 'sb${uniqueString(subscription().id, resourceGroup().id)}'
 var eventHubNamespaceName = 'eh${uniqueString(subscription().id, resourceGroup().id)}'
 var eventHubKafkaNamespaceName = 'ehk${uniqueString(subscription().id, resourceGroup().id)}'
@@ -52,6 +55,10 @@ resource ehNamespace 'Microsoft.EventHub/namespaces@2017-04-01' = {
 
     resource net5ConsumerGroup 'consumergroups' = {
       name: 'net5'
+    }
+
+    resource net6ConsumerGroup 'consumergroups' = {
+      name: 'net6'
     }
   }
 }
@@ -117,6 +124,46 @@ resource sbNamespace 'Microsoft.ServiceBus/namespaces@2017-04-01' = {
 
 resource fxStorageAccount 'Microsoft.Storage/storageAccounts@2021-04-01' = {
   name: storageAccountName
+  location: resourceGroup().location
+  sku: {
+    name: 'Standard_RAGRS'
+  }
+  kind: 'StorageV2'
+  tags: sampleTags
+
+  resource fxBlobServices 'blobServices' = {
+    name: 'default'
+  }
+  resource fxQueueServices 'queueServices' = {
+    name: 'default'
+    resource sampleQueue 'queues' = {
+      name: 'sample'
+    }
+  }
+}
+
+resource fxStorageAccount5 'Microsoft.Storage/storageAccounts@2021-04-01' = {
+  name: storageAccountName5
+  location: resourceGroup().location
+  sku: {
+    name: 'Standard_RAGRS'
+  }
+  kind: 'StorageV2'
+  tags: sampleTags
+
+  resource fxBlobServices 'blobServices' = {
+    name: 'default'
+  }
+  resource fxQueueServices 'queueServices' = {
+    name: 'default'
+    resource sampleQueue 'queues' = {
+      name: 'sample'
+    }
+  }
+}
+
+resource fxStorageAccount6 'Microsoft.Storage/storageAccounts@2021-04-01' = {
+  name: storageAccountName6
   location: resourceGroup().location
   sku: {
     name: 'Standard_RAGRS'
@@ -345,6 +392,8 @@ resource appInsightsConsumerv5 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
+var fxStorageConnectionString5 = 'DefaultEndpointsProtocol=https;AccountName=${fxStorageAccount5.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${listKeys(fxStorageAccount5.id, fxStorageAccount5.apiVersion).keys[0].value}'
+
 resource consumerAppv5 'Microsoft.Web/sites@2021-01-15' = {
   name: consumerFunctionAppNamev5
   location: resourceGroup().location
@@ -356,7 +405,7 @@ resource consumerAppv5 'Microsoft.Web/sites@2021-01-15' = {
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
-          value: fxStorageConnectionString
+          value: fxStorageConnectionString5
         }
         {
           'name': 'APPINSIGHTS_INSTRUMENTATIONKEY'
@@ -400,19 +449,105 @@ resource consumerAppv5 'Microsoft.Web/sites@2021-01-15' = {
         }
         {
           'name': 'StorageQueueConnection'
-          'value': fxStorageConnectionString
+          'value': fxStorageConnectionString5
         }
         {
           'name': 'StorageQueueName'
-          'value': fxStorageAccount::fxQueueServices::sampleQueue.name
+          'value': fxStorageAccount5::fxQueueServices::sampleQueue.name
         }
         {
           'name': 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-          'value': fxStorageConnectionString
+          'value': fxStorageConnectionString5
         }
         {
           'name': 'WEBSITE_CONTENTSHARE'
           'value': toLower(consumerFunctionAppNamev5)
+        }
+      ]
+    }
+  }
+}
+
+resource appInsightsConsumerv6 'Microsoft.Insights/components@2020-02-02' = {
+  name: consumerFunctionAppNamev6
+  location: resourceGroup().location
+  kind: 'other'
+  tags: sampleTags
+  properties: {
+    Application_Type: 'other'
+  }
+}
+
+var fxStorageConnectionString6 = 'DefaultEndpointsProtocol=https;AccountName=${fxStorageAccount6.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${listKeys(fxStorageAccount6.id, fxStorageAccount6.apiVersion).keys[0].value}'
+
+resource consumerAppv6 'Microsoft.Web/sites@2021-01-15' = {
+  name: consumerFunctionAppNamev6
+  location: resourceGroup().location
+  kind: 'functionapp'
+  tags: sampleTags
+  properties: {
+    serverFarmId: fxPlan.id
+    siteConfig: {
+      appSettings: [
+        {
+          name: 'AzureWebJobsStorage'
+          value: fxStorageConnectionString6
+        }
+        {
+          'name': 'APPINSIGHTS_INSTRUMENTATIONKEY'
+          'value': appInsightsConsumerv6.properties.InstrumentationKey
+        }
+        {
+          'name': 'CollectorEventHubConnection'
+          'value': listkeys(ehAuthRuleResourceId, ehNamespace::collectorEventHub.apiVersion).primaryConnectionString
+        }
+        {
+          'name': 'CollectorEventHubName'
+          'value': ehNamespace::collectorEventHub.name
+        }
+        {
+          'name': 'EventHubConnection'
+          'value': listkeys(ehAuthRuleResourceId, ehNamespace::sampleEventHub.apiVersion).primaryConnectionString
+        }
+        {
+          'name': 'EventHubName'
+          'value': ehNamespace::sampleEventHub.name
+        }
+        {
+          'name': 'EventHubConsumerGroupName'
+          'value': ehNamespace::sampleEventHub::net6ConsumerGroup.name
+        }
+        {
+          'name': 'FUNCTIONS_EXTENSION_RUNTIME'
+          'value': 'dotnet-isolated'
+        }
+        {
+          'name': 'FUNCTIONS_EXTENSION_VERSION'
+          'value': '~4'
+        }
+        {
+          'name': 'ServiceBusConnection'
+          'value': listkeys(sbAuthRuleResourceId, sbNamespace::sbQueue.apiVersion).primaryConnectionString
+        }
+        {
+          'name': 'ServiceBusQueueName'
+          'value': sbNamespace::sbQueue.name
+        }
+        {
+          'name': 'StorageQueueConnection'
+          'value': fxStorageConnectionString6
+        }
+        {
+          'name': 'StorageQueueName'
+          'value': fxStorageAccount6::fxQueueServices::sampleQueue.name
+        }
+        {
+          'name': 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
+          'value': fxStorageConnectionString6
+        }
+        {
+          'name': 'WEBSITE_CONTENTSHARE'
+          'value': toLower(consumerFunctionAppNamev6)
         }
       ]
     }
@@ -435,6 +570,7 @@ resource eventGridTopic 'Microsoft.EventGrid/topics@2020-10-15-preview' = {
 
 output consumerApp string = consumerApp.name
 output consumerAppv5 string = consumerAppv5.name
+output consumerAppv6 string = consumerAppv6.name
 output producerApp string = producerApp.name
 output dexbaseUrl string = 'https://dataexplorer.azure.com/clusters/${kustoCluster.name}.${resourceGroup().location}/databases/${kustoCluster::kustoDatabase.name}'
 output dexResourceHost string = '${kustoCluster.name}.${resourceGroup().location}.kusto.windows.net'

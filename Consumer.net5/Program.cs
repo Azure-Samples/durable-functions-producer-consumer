@@ -3,7 +3,11 @@ using Microsoft.ApplicationInsights.Extensibility;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
+#if NET6_0
+namespace Consumer.net6
+#else
 namespace Consumer.net5
+#endif
 {
     public class Program
     {
