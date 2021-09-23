@@ -1,6 +1,7 @@
 var dataExplorerClusterName = toLower('dex${uniqueString(subscription().id, resourceGroup().id)}')
 var consumerFunctionAppName = 'consumer${uniqueString(subscription().id, resourceGroup().id)}'
 var consumerFunctionAppNamev5 = 'consumer${uniqueString(subscription().id, resourceGroup().id)}5'
+var consumerFunctionAppNamev6 = 'consumer${uniqueString(subscription().id, resourceGroup().id)}6'
 var producerFunctionAppName = 'producer${uniqueString(subscription().id, resourceGroup().id)}'
 var functionPlanName = '${uniqueString(subscription().id, resourceGroup().id)}Plan'
 var storageAccountName = toLower('stor${uniqueString(subscription().id, resourceGroup().id)}')
@@ -52,6 +53,10 @@ resource ehNamespace 'Microsoft.EventHub/namespaces@2017-04-01' = {
 
     resource net5ConsumerGroup 'consumergroups' = {
       name: 'net5'
+    }
+
+    resource net6ConsumerGroup 'consumergroups' = {
+      name: 'net6'
     }
   }
 }
@@ -419,6 +424,90 @@ resource consumerAppv5 'Microsoft.Web/sites@2021-01-15' = {
   }
 }
 
+resource appInsightsConsumerv6 'Microsoft.Insights/components@2020-02-02' = {
+  name: consumerFunctionAppNamev6
+  location: resourceGroup().location
+  kind: 'other'
+  tags: sampleTags
+  properties: {
+    Application_Type: 'other'
+  }
+}
+
+resource consumerAppv6 'Microsoft.Web/sites@2021-01-15' = {
+  name: consumerFunctionAppNamev6
+  location: resourceGroup().location
+  kind: 'functionapp'
+  tags: sampleTags
+  properties: {
+    serverFarmId: fxPlan.id
+    siteConfig: {
+      appSettings: [
+        {
+          name: 'AzureWebJobsStorage'
+          value: fxStorageConnectionString
+        }
+        {
+          'name': 'APPINSIGHTS_INSTRUMENTATIONKEY'
+          'value': appInsightsConsumerv5.properties.InstrumentationKey
+        }
+        {
+          'name': 'CollectorEventHubConnection'
+          'value': listkeys(ehAuthRuleResourceId, ehNamespace::collectorEventHub.apiVersion).primaryConnectionString
+        }
+        {
+          'name': 'CollectorEventHubName'
+          'value': ehNamespace::collectorEventHub.name
+        }
+        {
+          'name': 'EventHubConnection'
+          'value': listkeys(ehAuthRuleResourceId, ehNamespace::sampleEventHub.apiVersion).primaryConnectionString
+        }
+        {
+          'name': 'EventHubName'
+          'value': ehNamespace::sampleEventHub.name
+        }
+        {
+          'name': 'EventHubConsumerGroupName'
+          'value': ehNamespace::sampleEventHub::net6ConsumerGroup.name
+        }
+        {
+          'name': 'FUNCTIONS_EXTENSION_RUNTIME'
+          'value': 'dotnet-isolated'
+        }
+        {
+          'name': 'FUNCTIONS_EXTENSION_VERSION'
+          'value': '~4'
+        }
+        {
+          'name': 'ServiceBusConnection'
+          'value': listkeys(sbAuthRuleResourceId, sbNamespace::sbQueue.apiVersion).primaryConnectionString
+        }
+        {
+          'name': 'ServiceBusQueueName'
+          'value': sbNamespace::sbQueue.name
+        }
+        {
+          'name': 'StorageQueueConnection'
+          'value': fxStorageConnectionString
+        }
+        {
+          'name': 'StorageQueueName'
+          'value': fxStorageAccount::fxQueueServices::sampleQueue.name
+        }
+        {
+          'name': 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
+          'value': fxStorageConnectionString
+        }
+        {
+          'name': 'WEBSITE_CONTENTSHARE'
+          'value': toLower(consumerFunctionAppNamev6)
+        }
+      ]
+    }
+  }
+}
+
 resource eventGridTopic 'Microsoft.EventGrid/topics@2020-10-15-preview' = {
   name: eventGridTopicName
   location: resourceGroup().location
@@ -435,6 +524,7 @@ resource eventGridTopic 'Microsoft.EventGrid/topics@2020-10-15-preview' = {
 
 output consumerApp string = consumerApp.name
 output consumerAppv5 string = consumerAppv5.name
+output consumerAppv6 string = consumerAppv6.name
 output producerApp string = producerApp.name
 output dexbaseUrl string = 'https://dataexplorer.azure.com/clusters/${kustoCluster.name}.${resourceGroup().location}/databases/${kustoCluster::kustoDatabase.name}'
 output dexResourceHost string = '${kustoCluster.name}.${resourceGroup().location}.kusto.windows.net'
