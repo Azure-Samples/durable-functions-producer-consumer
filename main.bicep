@@ -5,6 +5,8 @@ var consumerFunctionAppNamev6 = 'consumer${uniqueString(subscription().id, resou
 var producerFunctionAppName = 'producer${uniqueString(subscription().id, resourceGroup().id)}'
 var functionPlanName = '${uniqueString(subscription().id, resourceGroup().id)}Plan'
 var storageAccountName = toLower('stor${uniqueString(subscription().id, resourceGroup().id)}')
+var storageAccountName5 = toLower('stor5${uniqueString(subscription().id, resourceGroup().id)}')
+var storageAccountName6 = toLower('stor6${uniqueString(subscription().id, resourceGroup().id)}')
 var serviceBusNamespaceName = 'sb${uniqueString(subscription().id, resourceGroup().id)}'
 var eventHubNamespaceName = 'eh${uniqueString(subscription().id, resourceGroup().id)}'
 var eventHubKafkaNamespaceName = 'ehk${uniqueString(subscription().id, resourceGroup().id)}'
@@ -122,6 +124,46 @@ resource sbNamespace 'Microsoft.ServiceBus/namespaces@2017-04-01' = {
 
 resource fxStorageAccount 'Microsoft.Storage/storageAccounts@2021-04-01' = {
   name: storageAccountName
+  location: resourceGroup().location
+  sku: {
+    name: 'Standard_RAGRS'
+  }
+  kind: 'StorageV2'
+  tags: sampleTags
+
+  resource fxBlobServices 'blobServices' = {
+    name: 'default'
+  }
+  resource fxQueueServices 'queueServices' = {
+    name: 'default'
+    resource sampleQueue 'queues' = {
+      name: 'sample'
+    }
+  }
+}
+
+resource fxStorageAccount5 'Microsoft.Storage/storageAccounts@2021-04-01' = {
+  name: storageAccountName5
+  location: resourceGroup().location
+  sku: {
+    name: 'Standard_RAGRS'
+  }
+  kind: 'StorageV2'
+  tags: sampleTags
+
+  resource fxBlobServices 'blobServices' = {
+    name: 'default'
+  }
+  resource fxQueueServices 'queueServices' = {
+    name: 'default'
+    resource sampleQueue 'queues' = {
+      name: 'sample'
+    }
+  }
+}
+
+resource fxStorageAccount6 'Microsoft.Storage/storageAccounts@2021-04-01' = {
+  name: storageAccountName6
   location: resourceGroup().location
   sku: {
     name: 'Standard_RAGRS'
@@ -350,6 +392,8 @@ resource appInsightsConsumerv5 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
+var fxStorageConnectionString5 = 'DefaultEndpointsProtocol=https;AccountName=${fxStorageAccount5.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${listKeys(fxStorageAccount5.id, fxStorageAccount5.apiVersion).keys[0].value}'
+
 resource consumerAppv5 'Microsoft.Web/sites@2021-01-15' = {
   name: consumerFunctionAppNamev5
   location: resourceGroup().location
@@ -361,7 +405,7 @@ resource consumerAppv5 'Microsoft.Web/sites@2021-01-15' = {
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
-          value: fxStorageConnectionString
+          value: fxStorageConnectionString5
         }
         {
           'name': 'APPINSIGHTS_INSTRUMENTATIONKEY'
@@ -405,15 +449,15 @@ resource consumerAppv5 'Microsoft.Web/sites@2021-01-15' = {
         }
         {
           'name': 'StorageQueueConnection'
-          'value': fxStorageConnectionString
+          'value': fxStorageConnectionString5
         }
         {
           'name': 'StorageQueueName'
-          'value': fxStorageAccount::fxQueueServices::sampleQueue.name
+          'value': fxStorageAccount5::fxQueueServices::sampleQueue.name
         }
         {
           'name': 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-          'value': fxStorageConnectionString
+          'value': fxStorageConnectionString5
         }
         {
           'name': 'WEBSITE_CONTENTSHARE'
@@ -434,6 +478,8 @@ resource appInsightsConsumerv6 'Microsoft.Insights/components@2020-02-02' = {
   }
 }
 
+var fxStorageConnectionString6 = 'DefaultEndpointsProtocol=https;AccountName=${fxStorageAccount6.name};EndpointSuffix=${environment().suffixes.storage};AccountKey=${listKeys(fxStorageAccount6.id, fxStorageAccount6.apiVersion).keys[0].value}'
+
 resource consumerAppv6 'Microsoft.Web/sites@2021-01-15' = {
   name: consumerFunctionAppNamev6
   location: resourceGroup().location
@@ -445,11 +491,11 @@ resource consumerAppv6 'Microsoft.Web/sites@2021-01-15' = {
       appSettings: [
         {
           name: 'AzureWebJobsStorage'
-          value: fxStorageConnectionString
+          value: fxStorageConnectionString6
         }
         {
           'name': 'APPINSIGHTS_INSTRUMENTATIONKEY'
-          'value': appInsightsConsumerv5.properties.InstrumentationKey
+          'value': appInsightsConsumerv6.properties.InstrumentationKey
         }
         {
           'name': 'CollectorEventHubConnection'
@@ -489,15 +535,15 @@ resource consumerAppv6 'Microsoft.Web/sites@2021-01-15' = {
         }
         {
           'name': 'StorageQueueConnection'
-          'value': fxStorageConnectionString
+          'value': fxStorageConnectionString6
         }
         {
           'name': 'StorageQueueName'
-          'value': fxStorageAccount::fxQueueServices::sampleQueue.name
+          'value': fxStorageAccount6::fxQueueServices::sampleQueue.name
         }
         {
           'name': 'WEBSITE_CONTENTAZUREFILECONNECTIONSTRING'
-          'value': fxStorageConnectionString
+          'value': fxStorageConnectionString6
         }
         {
           'name': 'WEBSITE_CONTENTSHARE'

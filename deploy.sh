@@ -73,7 +73,6 @@ eventHubKafkaProducerUrl=`echo $initialDeployResult | jq -r '.properties.outputs
 serviceBusProducer=`echo $initialDeployResult | jq -r '.properties.outputs["serviceBusProducer"].value'`
 storageQueueProducer=`echo $initialDeployResult | jq -r '.properties.outputs["storageQueueProducer"].value'`
 eventGridProducer=`echo $initialDeployResult | jq -r '.properties.outputs["eventGridProducer"].value'`
-storageAccount=`echo $initialDeployResult | jq -r '.properties.outputs["storageAccountName"].value'`
 
 echo -e "\e[32mDone!"
 echo -e "\e[39mYour Producer URLs are as follows:\nEvent Hubs: "$eventHubProducerUrl"\nEvent Hubs Kafka: "$eventHubKafkaProducerUrl"\nService Bus: "$serviceBusProducer"\nStorage Queue: "$storageQueueProducer"\nEvent Grid: "$eventGridProducer"\n\nView the readme for their associated payloads."
