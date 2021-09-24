@@ -192,13 +192,26 @@ resource fxPlan 'Microsoft.Web/serverfarms@2021-01-15' = {
   tags: sampleTags
 }
 
+resource producerInsightsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+  location: resourceGroup().location
+  name: producerFunctionAppName
+  tags: sampleTags
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+  }
+}
+
 resource appInsightsProducer 'Microsoft.Insights/components@2020-02-02' = {
   name: producerFunctionAppName
   location: resourceGroup().location
-  kind: 'other'
+  kind: 'web'
   tags: sampleTags
   properties: {
-    Application_Type: 'other'
+    Application_Type: 'web'
+    WorkspaceResourceId: producerInsightsWorkspace.id
+    IngestionMode: 'LogAnalytics'
   }
 }
 
@@ -296,13 +309,26 @@ resource producerApp 'Microsoft.Web/sites@2021-01-15' = {
   }
 }
 
+resource consumerInsightsWorkspace 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+  location: resourceGroup().location
+  name: consumerFunctionAppName
+  tags: sampleTags
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+  }
+}
+
 resource appInsightsConsumer 'Microsoft.Insights/components@2020-02-02' = {
   name: consumerFunctionAppName
   location: resourceGroup().location
-  kind: 'other'
+  kind: 'web'
   tags: sampleTags
   properties: {
-    Application_Type: 'other'
+    Application_Type: 'web'
+    WorkspaceResourceId: producerInsightsWorkspace.id
+    IngestionMode: 'LogAnalytics'
   }
 }
 
@@ -382,13 +408,26 @@ resource consumerApp 'Microsoft.Web/sites@2021-01-15' = {
   }
 }
 
+resource consumerInsightsWorkspace5 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+  location: resourceGroup().location
+  name: consumerFunctionAppNamev5
+  tags: sampleTags
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+  }
+}
+
 resource appInsightsConsumerv5 'Microsoft.Insights/components@2020-02-02' = {
   name: consumerFunctionAppNamev5
   location: resourceGroup().location
-  kind: 'other'
+  kind: 'web'
   tags: sampleTags
   properties: {
-    Application_Type: 'other'
+    Application_Type: 'web'
+    WorkspaceResourceId: consumerInsightsWorkspace5.id
+    IngestionMode: 'LogAnalytics'
   }
 }
 
@@ -468,13 +507,26 @@ resource consumerAppv5 'Microsoft.Web/sites@2021-01-15' = {
   }
 }
 
+resource consumerInsightsWorkspace6 'Microsoft.OperationalInsights/workspaces@2021-06-01' = {
+  location: resourceGroup().location
+  name: consumerFunctionAppNamev6
+  tags: sampleTags
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+  }
+}
+
 resource appInsightsConsumerv6 'Microsoft.Insights/components@2020-02-02' = {
   name: consumerFunctionAppNamev6
   location: resourceGroup().location
-  kind: 'other'
+  kind: 'web'
   tags: sampleTags
   properties: {
-    Application_Type: 'other'
+    Application_Type: 'web'
+    WorkspaceResourceId: consumerInsightsWorkspace6.id
+    IngestionMode: 'LogAnalytics'
   }
 }
 
